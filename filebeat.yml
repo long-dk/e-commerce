@@ -1,0 +1,22 @@
+filebeat.inputs:
+  - type: filestream
+    id: e-commerce-logs
+    paths:
+      - /usr/share/filebeat/logs/*.log
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+
+
+processors:
+  - add_docker_metadata: ~
+
+setup.kibana:
+  host: ${KIBANA_HOST}
+  username: elastic
+  password: ${ELASTIC_PASSWORD}
+
+output.logstash:
+  hosts: ${LOGSTASH_HOSTS}

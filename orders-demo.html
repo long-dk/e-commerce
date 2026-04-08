@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders Service Real-Time Demo</title>
+    <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .status.connected {
+            background: rgba(46, 204, 113, 0.8);
+        }
+
+        .status.disconnected {
+            background: rgba(231, 76, 60, 0.8);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #ffd700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .metric {
+            font-size: 2em;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .metric-label {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+        }
+
+        .orders-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .order-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            transition: all 0.3s ease;
+        }
+
+        .order-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pending { background: #f39c12; color: white; }
+        .status-confirmed { background: #3498db; color: white; }
+        .status-processing { background: #9b59b6; color: white; }
+        .status-shipped { background: #e67e22; color: white; }
+        .status-delivered { background: #27ae60; color: white; }
+        .status-cancelled { background: #e74c3c; color: white; }
+
+        .events-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .event-created { border-left: 4px solid #27ae60; }
+        .event-updated { border-left: 4px solid #3498db; }
+        .event-shipped { border-left: 4px solid #e67e22; }
+        .event-delivered { border-left: 4px solid #9b59b6; }
+        .event-cancelled { border-left: 4px solid #e74c3c; }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1em;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(46, 204, 113, 0.9);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.5s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.error {
+            background: rgba(231, 76, 60, 0.9);
+        }
+
+        .notification.success {
+            background: rgba(46, 204, 113, 0.9);
+        }
+
+        .notification.warning {
+            background: rgba(241, 196, 15, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Orders Service Real-Time Demo</h1>
+
+        <div id="connectionStatus" class="status disconnected">
+            🔌 Connecting to Orders Service...
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h3>📊 Live Metrics</h3>
+                <div class="metric-label">Total Orders</div>
+                <div class="metric" id="totalOrders">0</div>
+                <div class="metric-label">Active Orders</div>
+                <div class="metric" id="activeOrders">0</div>
+            </div>
+
+            <div class="card">
+                <h3>💰 Revenue</h3>
+                <div class="metric-label">Total Revenue</div>
+                <div class="metric" id="totalRevenue">$0.00</div>
+                <div class="metric-label">Today's Revenue</div>
+                <div class="metric" id="todayRevenue">$0.00</div>
+            </div>
+
+            <div class="card">
+                <h3>⚡ Real-Time Events</h3>
+                <div class="metric-label">Events Received</div>
+                <div class="metric" id="eventCount">0</div>
+                <div class="metric-label">Active Connections</div>
+                <div class="metric" id="activeConnections">1</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="connectBtn">🔌 Connect</button>
+            <button id="disconnectBtn" disabled>🔌 Disconnect</button>
+            <button id="createOrderBtn" disabled>🛒 Create Order</button>
+            <button id="clearEventsBtn">🧹 Clear Events</button>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h3>📦 Recent Orders</h3>
+                <div id="ordersList" class="orders-list">
+                    <div class="order-item">
+                        <strong>Demo Order #1</strong><br>
+                        <span class="order-status status-pending">PENDING</span><br>
+                        <small>$99.99 • 2 items • 2024-01-15</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📡 Live Event Feed</h3>
+                <div id="eventsList" class="events-list">
+                    <div class="event-item event-created">
+                        <strong>System Ready</strong><br>
+                        <small>Orders Service WebSocket demo initialized</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⚙️ Order Controls</h3>
+            <div class="input-group">
+                <label>Order ID (for updates):</label>
+                <input type="text" id="orderIdInput" placeholder="Enter order ID">
+            </div>
+            <div class="input-group">
+                <label>New Status:</label>
+                <select id="statusSelect">
+                    <option value="CONFIRMED">Confirm Order</option>
+                    <option value="PROCESSING">Start Processing</option>
+                    <option value="SHIPPED">Ship Order</option>
+                    <option value="DELIVERED">Mark Delivered</option>
+                    <option value="CANCELLED">Cancel Order</option>
+                </select>
+            </div>
+            <button id="updateOrderBtn" disabled>🔄 Update Order Status</button>
+        </div>
+    </div>
+
+    <script>
+        class OrdersDemo {
+            constructor() {
+                this.socket = null;
+                this.isConnected = false;
+                this.orders = [];
+                this.events = [];
+                this.totalRevenue = 0;
+                this.todayRevenue = 0;
+                this.eventCount = 0;
+
+                this.init();
+                this.bindEvents();
+            }
+
+            init() {
+                this.updateConnectionStatus(false);
+                this.updateMetrics();
+            }
+
+            bindEvents() {
+                document.getElementById('connectBtn').addEventListener('click', () => this.connect());
+                document.getElementById('disconnectBtn').addEventListener('click', () => this.disconnect());
+                document.getElementById('createOrderBtn').addEventListener('click', () => this.createOrder());
+                document.getElementById('updateOrderBtn').addEventListener('click', () => this.updateOrder());
+                document.getElementById('clearEventsBtn').addEventListener('click', () => this.clearEvents());
+            }
+
+            connect() {
+                if (this.socket) {
+                    this.socket.disconnect();
+                }
+
+                this.socket = io('http://localhost:4003/orders', {
+                    transports: ['websocket', 'polling']
+                });
+
+                this.socket.on('connect', () => {
+                    this.isConnected = true;
+                    this.updateConnectionStatus(true);
+                    this.addEvent('Connected', 'Successfully connected to Orders Service', 'event-created');
+                    this.socket.emit('authenticate', { token: 'demo-token' });
+                    this.socket.emit('subscribeToOrders');
+                });
+
+                this.socket.on('disconnect', () => {
+                    this.isConnected = false;
+                    this.updateConnectionStatus(false);
+                    this.addEvent('Disconnected', 'Lost connection to Orders Service', 'event-cancelled');
+                });
+
+                this.socket.on('orderCreated', (data) => {
+                    this.handleOrderCreated(data);
+                });
+
+                this.socket.on('orderUpdated', (data) => {
+                    this.handleOrderUpdated(data);
+                });
+
+                this.socket.on('orderShipped', (data) => {
+                    this.handleOrderShipped(data);
+                });
+
+                this.socket.on('orderDelivered', (data) => {
+                    this.handleOrderDelivered(data);
+                });
+
+                this.socket.on('orderCancelled', (data) => {
+                    this.handleOrderCancelled(data);
+                });
+
+                this.socket.on('error', (error) => {
+                    this.addEvent('Error', `WebSocket error: ${error.message}`, 'event-cancelled');
+                    this.showNotification('Connection error occurred', 'error');
+                });
+            }
+
+            disconnect() {
+                if (this.socket) {
+                    this.socket.disconnect();
+                    this.socket = null;
+                }
+                this.isConnected = false;
+                this.updateConnectionStatus(false);
+            }
+
+            updateConnectionStatus(connected) {
+                const statusEl = document.getElementById('connectionStatus');
+                const connectBtn = document.getElementById('connectBtn');
+                const disconnectBtn = document.getElementById('disconnectBtn');
+                const createOrderBtn = document.getElementById('createOrderBtn');
+                const updateOrderBtn = document.getElementById('updateOrderBtn');
+
+                if (connected) {
+                    statusEl.className = 'status connected';
+                    statusEl.textContent = '🟢 Connected to Orders Service';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    createOrderBtn.disabled = false;
+                    updateOrderBtn.disabled = false;
+                } else {
+                    statusEl.className = 'status disconnected';
+                    statusEl.textContent = '🔴 Disconnected from Orders Service';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    createOrderBtn.disabled = true;
+                    updateOrderBtn.disabled = true;
+                }
+            }
+
+            async createOrder() {
+                if (!this.isConnected) return;
+
+                try {
+                    const response = await fetch('http://localhost:4003/graphql', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: `
+                                mutation CreateOrder($input: CreateOrderInput!) {
+                                    createOrder(input: $input) {
+                                        id
+                                        totalAmount
+                                        status
+                                        items {
+                                            productName
+                                            quantity
+                                            price
+                                        }
+                                        createdAt
+                                    }
+                                }
+                            `,
+                            variables: {
+                                input: {
+                                    items: [
+                                        {
+                                            productId: 'demo-product-1',
+                                            quantity: Math.floor(Math.random() * 3) + 1,
+                                            price: Math.floor(Math.random() * 50) + 10
+                                        }
+                                    ],
+                                    shippingAddress: {
+                                        street: '123 Demo Street',
+                                        city: 'Demo City',
+                                        state: 'DC',
+                                        zipCode: '12345',
+                                        country: 'Demo Country'
+                                    }
+                                }
+                            }
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.errors) {
+                        throw new Error(result.errors[0].message);
+                    }
+
+                    this.showNotification('Order created successfully!', 'success');
+                } catch (error) {
+                    this.addEvent('Error', `Failed to create order: ${error.message}`, 'event-cancelled');
+                    this.showNotification('Failed to create order', 'error');
+                }
+            }
+
+            async updateOrder() {
+                if (!this.isConnected) return;
+
+                const orderId = document.getElementById('orderIdInput').value.trim();
+                const newStatus = document.getElementById('statusSelect').value;
+
+                if (!orderId) {
+                    this.showNotification('Please enter an order ID', 'warning');
+                    return;
+                }
+
+                try {
+                    let mutation = '';
+                    let variables = { id: orderId };
+
+                    switch (newStatus) {
+                        case 'CONFIRMED':
+                            mutation = 'mutation ConfirmOrder($id: ID!) { confirmOrder(id: $id) { id status } }';
+                            break;
+                        case 'PROCESSING':
+                            mutation = 'mutation ProcessOrder($id: ID!) { processOrder(id: $id) { id status } }';
+                            break;
+                        case 'SHIPPED':
+                            mutation = 'mutation ShipOrder($id: ID!, $tracking: String, $carrier: String) { shipOrder(id: $id, trackingNumber: $tracking, carrier: $carrier) { id status trackingNumber carrier } }';
+                            variables.trackingNumber = `DEMO${Date.now()}`;
+                            variables.carrier = 'Demo Carrier';
+                            break;
+                        case 'DELIVERED':
+                            mutation = 'mutation DeliverOrder($id: ID!) { deliverOrder(id: $id) { id status } }';
+                            break;
+                        case 'CANCELLED':
+                            mutation = 'mutation CancelOrder($id: ID!) { cancelOrder(id: $id) { id status } }';
+                            break;
+                    }
+
+                    const response = await fetch('http://localhost:4003/graphql', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: mutation,
+                            variables: variables
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.errors) {
+                        throw new Error(result.errors[0].message);
+                    }
+
+                    this.showNotification(`Order ${newStatus.toLowerCase()} successfully!`, 'success');
+                } catch (error) {
+                    this.addEvent('Error', `Failed to update order: ${error.message}`, 'event-cancelled');
+                    this.showNotification('Failed to update order', 'error');
+                }
+            }
+
+            handleOrderCreated(data) {
+                this.addEvent('Order Created', `Order #${data.order.id} created for $${data.order.totalAmount}`, 'event-created');
+                this.addOrderToList(data.order);
+                this.totalRevenue += parseFloat(data.order.totalAmount);
+                this.todayRevenue += parseFloat(data.order.totalAmount);
+                this.updateMetrics();
+                this.showNotification(`New order created: $${data.order.totalAmount}`, 'success');
+            }
+
+            handleOrderUpdated(data) {
+                this.addEvent('Order Updated', `Order #${data.order.id} status: ${data.order.status}`, 'event-updated');
+                this.updateOrderInList(data.order);
+                this.showNotification(`Order #${data.order.id} updated to ${data.order.status}`, 'success');
+            }
+
+            handleOrderShipped(data) {
+                this.addEvent('Order Shipped', `Order #${data.order.id} shipped via ${data.order.carrier}`, 'event-shipped');
+                this.updateOrderInList(data.order);
+                this.showNotification(`Order #${data.order.id} has been shipped!`, 'success');
+            }
+
+            handleOrderDelivered(data) {
+                this.addEvent('Order Delivered', `Order #${data.order.id} delivered successfully`, 'event-delivered');
+                this.updateOrderInList(data.order);
+                this.showNotification(`Order #${data.order.id} has been delivered!`, 'success');
+            }
+
+            handleOrderCancelled(data) {
+                this.addEvent('Order Cancelled', `Order #${data.order.id} cancelled`, 'event-cancelled');
+                this.updateOrderInList(data.order);
+                this.showNotification(`Order #${data.order.id} has been cancelled`, 'warning');
+            }
+
+            addOrderToList(order) {
+                this.orders.unshift(order);
+                this.updateOrdersList();
+            }
+
+            updateOrderInList(updatedOrder) {
+                const index = this.orders.findIndex(o => o.id === updatedOrder.id);
+                if (index !== -1) {
+                    this.orders[index] = updatedOrder;
+                    this.updateOrdersList();
+                }
+            }
+
+            updateOrdersList() {
+                const listEl = document.getElementById('ordersList');
+                listEl.innerHTML = '';
+
+                this.orders.slice(0, 10).forEach(order => {
+                    const orderEl = document.createElement('div');
+                    orderEl.className = 'order-item';
+                    orderEl.innerHTML = `
+                        <strong>Order #${order.id.slice(-8)}</strong><br>
+                        <span class="order-status status-${order.status.toLowerCase()}">${order.status}</span><br>
+                        <small>$${order.totalAmount} • ${order.items?.length || 0} items • ${new Date(order.createdAt || Date.now()).toLocaleDateString()}</small>
+                        ${order.trackingNumber ? `<br><small>Tracking: ${order.trackingNumber} (${order.carrier})</small>` : ''}
+                    `;
+                    listEl.appendChild(orderEl);
+                });
+            }
+
+            addEvent(title, message, type = 'event-updated') {
+                this.events.unshift({
+                    title,
+                    message,
+                    type,
+                    timestamp: new Date()
+                });
+                this.eventCount++;
+                this.updateEventsList();
+                this.updateMetrics();
+            }
+
+            updateEventsList() {
+                const listEl = document.getElementById('eventsList');
+                listEl.innerHTML = '';
+
+                this.events.slice(0, 20).forEach(event => {
+                    const eventEl = document.createElement('div');
+                    eventEl.className = `event-item ${event.type}`;
+                    eventEl.innerHTML = `
+                        <strong>${event.title}</strong><br>
+                        <small>${event.message}</small><br>
+                        <small style="opacity: 0.7">${event.timestamp.toLocaleTimeString()}</small>
+                    `;
+                    listEl.appendChild(eventEl);
+                });
+            }
+
+            clearEvents() {
+                this.events = [];
+                this.eventCount = 0;
+                this.updateEventsList();
+                this.updateMetrics();
+            }
+
+            updateMetrics() {
+                document.getElementById('totalOrders').textContent = this.orders.length;
+                document.getElementById('activeOrders').textContent = this.orders.filter(o => !['DELIVERED', 'CANCELLED'].includes(o.status)).length;
+                document.getElementById('totalRevenue').textContent = `$${this.totalRevenue.toFixed(2)}`;
+                document.getElementById('todayRevenue').textContent = `$${this.todayRevenue.toFixed(2)}`;
+                document.getElementById('eventCount').textContent = this.eventCount;
+                document.getElementById('activeConnections').textContent = this.isConnected ? '1' : '0';
+            }
+
+            showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+
+        // Initialize demo when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new OrdersDemo();
+        });
+    </script>
+</body>
+</html>

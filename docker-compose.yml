@@ -1,0 +1,418 @@
+services:
+  # ==================== INFRASTRUCTURE ====================
+  
+  # Zookeeper - Kafka dependency
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - ecommerce-network
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+
+  # Kafka Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    networks:
+      - ecommerce-network
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    ports:
+      - "5432:5432"
+    networks:
+      - ecommerce-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DATABASE_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MONGO_INITDB_DATABASE: ${DATABASE_NAME}
+    ports:
+      - "27017:27017"
+    networks:
+      - ecommerce-network
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: echo "db.adminCommand('ping')" | mongosh -u ${DATABASE_USER} -p ${DATABASE_PASSWORD}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION:-8.10.1}
+    container_name: elasticsearch
+    env_file:
+      - .env
+    environment:
+      # - xpack.security.enabled=false
+      # - xpack.security.enrollment.enabled=false
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - ecommerce-network
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: curl -s http://localhost:9200 >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Logstash
+  logstash:
+    image: docker.elastic.co/logstash/logstash:${STACK_VERSION:-8.10.1}
+    container_name: logstash
+    depends_on:
+      - elasticsearch
+    env_file:
+      - .env
+    environment:
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+      - XPACK_MONITORING_ELASTICSEARCH_USERNAME=elastic
+      - XPACK_MONITORING_ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+      - XPACK_MONITORING_ELASTICSEARCH_HOSTS=elasticsearch:9200
+      - XPACK_MONITORING_ENABLED=true
+    ports:
+      - "5000:5000/udp"
+      - "5001:5001"
+      - "9600:9600"
+    networks:
+      - ecommerce-network
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    command: logstash -f /usr/share/logstash/pipeline/logstash.conf
+    healthcheck:
+      test: curl -s http://localhost:9600 >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION:-8.10.1}
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      # ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+      # ELASTICSEARCH_USERNAME: kibana_system
+      # ELASTICSEARCH_PASSWORD: ${KIBANA_PASSWORD}
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      # get token: curl -X POST -u elastic:elastic_password "localhost:9200/_security/service/elastic/kibana/credential/token/token1?pretty"
+      - ELASTICSEARCH_SERVICEACCOUNTTOKEN=${KIBANA_TOKEN}
+      - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_REPORTING_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+    ports:
+      - "5601:5601"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: curl -s http://localhost:5601/api/status >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:${STACK_VERSION:-8.10.1}
+    user: root
+    container_name: filebeat
+    depends_on:
+      - logstash
+    env_file:
+      - .env
+    environment:
+      - LOGSTASH_HOSTS=logstash:5001
+      - KIBANA_HOST=kibana:5601
+    volumes:
+      - filebeat-data:/usr/share/filebeat/data
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - app-logs:/usr/share/filebeat/logs:ro
+    networks:
+      - ecommerce-network
+
+  # ==================== MICROSERVICES ====================
+
+  # Auth Service
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: ${AUTH_SERVICE_NAME}
+    container_name: auth-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: ${AUTH_SERVICE_NAME}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "4001:4001"
+    volumes:
+      - app-logs:${LOGS_DIR:-/app/logs}
+    networks:
+      - ecommerce-network
+    command: node dist/apps/auth-service/main
+    restart: unless-stopped
+
+  # Products Service
+  products-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: ${PRODUCTS_SERVICE_NAME}
+    container_name: products-service
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: ${PRODUCTS_SERVICE_NAME}
+      MONGODB_URI: ${PRODUCTS_MONGODB_URI}
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "4002:4002"
+    volumes:
+      - app-logs:${LOGS_DIR:-/app/logs}
+    networks:
+      - ecommerce-network
+    command: node dist/apps/products-service/main
+    restart: unless-stopped
+
+  # Orders Service
+  orders-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: ${ORDERS_SERVICE_NAME}
+    container_name: orders-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: ${ORDERS_SERVICE_NAME}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "4003:4003"
+    volumes:
+      - app-logs:${LOGS_DIR:-/app/logs}
+    networks:
+      - ecommerce-network
+    command: node dist/apps/orders-service/main
+    restart: unless-stopped
+
+  # Payments Service
+  payments-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: ${PAYMENTS_SERVICE_NAME}
+    container_name: payments-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: ${PAYMENTS_SERVICE_NAME}
+      PAYMENTS_DB_HOST: postgres
+      PAYMENTS_DB_PORT: ${DATABASE_PORT}
+      PAYMENTS_DB_USERNAME: ${DATABASE_USER}
+      PAYMENTS_DB_PASSWORD: ${DATABASE_PASSWORD}
+      PAYMENTS_DB_NAME: ${DATABASE_NAME}
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "4004:4004"
+    volumes:
+      - app-logs:${LOGS_DIR:-/app/logs}
+    networks:
+      - ecommerce-network
+    command: node dist/apps/payments-service/main
+    restart: unless-stopped
+
+  # Inventory Service
+  inventory-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: ${INVENTORY_SERVICE_NAME}
+    container_name: inventory-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: ${INVENTORY_SERVICE_NAME}
+      MONGODB_URI: ${INVENTORY_MONGODB_URI}
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "4005:4005"
+    volumes:
+      - app-logs:${LOGS_DIR:-/app/logs}
+    networks:
+      - ecommerce-network
+    command: node dist/apps/inventory-service/main
+    restart: unless-stopped
+
+  # Shipping Service
+  shipping-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: ${SHIPPING_SERVICE_NAME}
+    container_name: shipping-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+       - .env
+    environment:
+      SERVICE_NAME: ${SHIPPING_SERVICE_NAME}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "4006:4006"
+    volumes:
+      - app-logs:${LOGS_DIR:-/app/logs}
+    networks:
+      - ecommerce-network
+    command: node dist/apps/shipping-service/main
+    restart: unless-stopped
+
+  # Notifications Service
+  notifications-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: ${NOTIFICATIONS_SERVICE_NAME}
+    container_name: notifications-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: ${NOTIFICATIONS_SERVICE_NAME}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      KAFKA_BROKERS: kafka:29092
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+    ports:
+      - "4007:4007"
+    volumes:
+      - app-logs:${LOGS_DIR:-/app/logs}
+    networks:
+      - ecommerce-network
+    command: node dist/apps/notifications-service/main
+    restart: unless-stopped
+
+networks:
+  ecommerce-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mongodb-data:
+  kafka-data:
+  zookeeper-data:
+  zookeeper-logs:
+  elasticsearch-data:
+  filebeat-data:
+  app-logs:
