@@ -59,7 +59,7 @@ This platform provides a complete e-commerce solution with:
 
 ```bash
 # Clone and install
-git clone <repo>
+git clone https://github.com/long-dk/e-commerce.git
 cd e-commerce
 npm install --legacy-peer-deps
 
@@ -323,12 +323,12 @@ Subscribers:
 .
 ├── apps/
 │   ├── auth-service/              ✅ Complete
-│   ├── products-service/          🔄 Phase 4
-│   ├── orders-service/            📅 Phase 5
-│   ├── payments-service/          📅 Phase 6
-│   ├── inventory-service/         📅 Phase 7
-│   ├── shipping-service/          📅 Phase 7
-│   └── notifications-service/     📅 Phase 8
+│   ├── products-service/          ✅ Complete
+│   ├── orders-service/            ✅ Complete
+│   ├── payments-service/          ✅ Complete
+│   ├── inventory-service/         ✅ Complete
+│   ├── shipping-service/          ✅ Complete
+│   └── notifications-service/     ✅ Complete
 ├── libs/
 │   ├── common/                    ✅ Complete
 │   ├── dto/                       ✅ Complete
@@ -371,9 +371,6 @@ npm run build auth-service
 - **Phase 1**: NestJS monorepo scaffolding
 - **Phase 2**: Shared libraries implementation
 - **Phase 3**: Auth Service complete
-
-## 📅 Upcoming Phases
-
 - **Phase 4**: Products Service
 - **Phase 5**: Orders Service
 - **Phase 6**: Payments Service
