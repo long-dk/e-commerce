@@ -40,6 +40,13 @@ services:
       - kafka-data:/var/lib/kafka/data
 
   # PostgreSQL Database
+  # Database Per Service Pattern: Each service gets its own database
+  # Services using PostgreSQL:
+  #   - auth-service          → auth_db
+  #   - orders-service        → orders_db
+  #   - payments-service      → payments_db
+  #   - shipping-service      → shipping_db
+  #   - notifications-service → notifications_db
   postgres:
     image: postgres:16-alpine
     container_name: postgres
@@ -62,6 +69,10 @@ services:
       retries: 5
 
   # MongoDB
+  # Database Per Service Pattern: Each service gets its own database
+  # Services using MongoDB:
+  #   - products-service  → products_db
+  #   - inventory-service → inventory_db
   mongodb:
     image: mongo:7.0
     container_name: mongodb

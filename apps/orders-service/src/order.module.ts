@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { OrderController } from './order.controller';
 import { OrderResolver } from './order.resolver';
 import { OrderService } from './order.service';
@@ -10,6 +10,7 @@ import { OrderGateway } from './order.gateway';
 import { Order, OrderItem } from './order.entity';
 import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { GraphQLJSONObject } from 'graphql-type-json';
+import { getOrdersServicePostgresConfig } from '@app/database';
 import { LoggerService } from '@app/common';
 
 @Module({
@@ -17,21 +18,7 @@ import { LoggerService } from '@app/common';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DATABASE_HOST', 'localhost'),
-        port: configService.get('DATABASE_PORT', 5432),
-        username: configService.get('DATABASE_USER', 'postgres'),
-        password: configService.get('DATABASE_PASSWORD', 'password'),
-        database: configService.get('DATABASE_NAME', 'ecommerce_orders'),
-        entities: [Order, OrderItem],
-        synchronize: configService.get('NODE_ENV') !== 'production',
-        logging: configService.get('NODE_ENV') === 'development',
-      }),
-      inject: [ConfigService],
-    }),
+    TypeOrmModule.forRoot(getOrdersServicePostgresConfig() as any),
     TypeOrmModule.forFeature([Order, OrderItem]),
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,

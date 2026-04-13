@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Payment } from './payment.entity';
 import { PaymentService } from './payment.service';
 import { PaymentResolver } from './payment.resolver';
 import { PaymentGateway } from './payment.gateway';
 import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
+import { getPaymentsServicePostgresConfig } from '@app/database';
 import { LoggerService } from '@app/common';
 import { PaymentController } from './payment.controller';
 
@@ -16,21 +17,7 @@ import { PaymentController } from './payment.controller';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('PAYMENTS_DB_HOST', 'localhost'),
-        port: configService.get('PAYMENTS_DB_PORT', 5432),
-        username: configService.get('PAYMENTS_DB_USERNAME', 'ecommerce_user'),
-        password: configService.get('PAYMENTS_DB_PASSWORD', 'ecommerce_password'),
-        database: configService.get('PAYMENTS_DB_NAME', 'ecommerce_db'),
-        entities: [Payment],
-        synchronize: configService.get('NODE_ENV') !== 'production',
-        logging: configService.get('NODE_ENV') === 'development',
-      }),
-      inject: [ConfigService],
-    }),
+    TypeOrmModule.forRoot(getPaymentsServicePostgresConfig() as any),
     TypeOrmModule.forFeature([Payment]),
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,

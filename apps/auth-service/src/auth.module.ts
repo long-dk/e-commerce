@@ -15,7 +15,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { GoogleStrategy } from './google.strategy';
 import { GithubStrategy } from './github.strategy';
 import { EmailService } from './email.service';
-import { getPostgresConfig } from '@app/database';
+import { getAuthServicePostgresConfig } from '@app/database';
 import { LoggerService } from '@app/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
@@ -25,7 +25,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot(getPostgresConfig() as any),
+    TypeOrmModule.forRoot(getAuthServicePostgresConfig() as any),
     TypeOrmModule.forFeature([User, RefreshToken]),
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,

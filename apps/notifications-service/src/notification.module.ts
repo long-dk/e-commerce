@@ -8,12 +8,12 @@ import { NotificationResolver } from './notification.resolver';
 import { NotificationGateway } from './notification.gateway';
 import { NotificationController } from './notification.controller';
 import { Notification } from './notification.entity';
-import { getPostgresConfig } from '@app/database';
+import { getNotificationsServicePostgresConfig } from '@app/database';
 import { LoggerService } from '@app/common';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(getPostgresConfig() as any),
+    TypeOrmModule.forRoot(getNotificationsServicePostgresConfig() as any),
     TypeOrmModule.forFeature([Notification]),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,

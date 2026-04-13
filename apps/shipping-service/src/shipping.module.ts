@@ -9,21 +9,13 @@ import { ShippingService } from './shipping.service';
 import { ShippingGateway } from './shipping.gateway';
 import { ShippingKafkaService } from './shipping.kafka';
 import { JwtModule } from '@nestjs/jwt';
+import { getShippingServicePostgresConfig } from '@app/database';
 import { LoggerService } from '@app/common';
 import { retry } from 'rxjs';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DATABASE_HOST || 'localhost',
-      port: Number(process.env.DATABASE_PORT) || 5432,
-      username: process.env.DATABASE_USER || 'ecommerce_user',
-      password: process.env.DATABASE_PASSWORD || 'ecommerce_password',
-      database: process.env.DATABASE_NAME || 'ecommerce_db',
-      entities: [Shipment],
-      synchronize: true,
-    }),
+    TypeOrmModule.forRoot(getShippingServicePostgresConfig() as any),
     TypeOrmModule.forFeature([Shipment]),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,

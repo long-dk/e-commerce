@@ -7,7 +7,7 @@ import { ProductService } from './product.service';
 import { ProductResolver } from './product.resolver';
 import { ProductGateway } from './product.gateway';
 import { Product, ProductSchema } from './product.schema';
-import { getMongoConfig } from '@app/database';
+import { getProductsServiceMongoConfig } from '@app/database';
 import { LoggerService } from '@app/common';
 import { ProductController } from './product.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -19,7 +19,7 @@ import { retry } from 'rxjs';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    MongooseModule.forRoot(getMongoConfig().uri),
+    MongooseModule.forRoot(getProductsServiceMongoConfig().uri),
     MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,

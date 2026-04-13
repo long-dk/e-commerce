@@ -9,7 +9,7 @@ import { InventoryResolver } from './inventory.resolver';
 import { InventoryService } from './inventory.service';
 import { InventoryGateway } from './inventory.gateway';
 import { InventoryKafkaService } from './inventory.kafka';
-import { getMongoConfig } from '@app/database';
+import { getInventoryServiceMongoConfig } from '@app/database';
 import { JwtModule } from '@nestjs/jwt';
 import { LoggerService } from '@app/common';
 import { InventoryController } from './inventory.controller';
@@ -17,7 +17,7 @@ import { InventoryController } from './inventory.controller';
 @Module({
   imports: [
     // MongoDB connection for inventory data
-    MongooseModule.forRoot(getMongoConfig().uri),
+    MongooseModule.forRoot(getInventoryServiceMongoConfig().uri),
     MongooseModule.forFeature([
       { name: Inventory.name, schema: InventorySchema },
       { name: StockMovement.name, schema: StockMovementSchema },
