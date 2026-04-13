@@ -5,3 +5,7 @@ export * from './roles.guard';
 export * from './roles.decorator';
 export * from './current-user.decorator';
 export * from '../../../libs/shared/src/auth/jwt-auth.guard';
+export * from './circuit-breaker.service';
+export * from './retry.service';
+export * from './resilient-http-client.service';
+export * from './common.module';
