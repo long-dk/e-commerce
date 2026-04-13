@@ -94,6 +94,32 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Cache
+  # Caching layer for all microservices to improve performance
+  # Used for:
+  #   - Product listings and details caching
+  #   - User session caching
+  #   - Order tracking cache
+  #   - Distributed session management
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    env_file:
+      - .env
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - ecommerce-network
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   # Elasticsearch
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION:-8.10.1}
@@ -421,6 +447,7 @@ networks:
 volumes:
   postgres-data:
   mongodb-data:
+  redis-data:
   kafka-data:
   zookeeper-data:
   zookeeper-logs:

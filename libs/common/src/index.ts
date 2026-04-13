@@ -8,4 +8,7 @@ export * from '../../../libs/shared/src/auth/jwt-auth.guard';
 export * from './circuit-breaker.service';
 export * from './retry.service';
 export * from './resilient-http-client.service';
+export * from './cache.service';
+export * from './cache.decorators';
+export * from './cache.config';
 export * from './common.module';

@@ -16,9 +16,16 @@ import {
   OrderPlacedEvent,
   OrderCancelledEvent,
 } from '@app/kafka';
+import {
+  LoggerService,
+  CacheService,
+  Cacheable,
+  CacheInvalidate,
+  CACHE_TTL,
+  CACHE_KEYS,
+} from '@app/common';
 import { ProductGateway } from './product.gateway';
 import { ProductDocument } from './product.schema';
-import { LoggerService } from '@app/common';
 import { ClientKafka } from '@nestjs/microservices';
 
 @Injectable()
@@ -30,6 +37,7 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
     @Inject(forwardRef(() => ProductGateway))
     private readonly productGateway: ProductGateway,
     private readonly logger: LoggerService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async onModuleInit() {
@@ -51,6 +59,14 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
 
     // Emit real-time WebSocket event
     this.productGateway.emitProductCreated(this.toProductResponseDto(savedProduct));
+
+    // Invalidate list caches
+    await this.cacheService.del([
+      CACHE_KEYS.PRODUCTS_ALL,
+      CACHE_KEYS.PRODUCTS_FEATURED,
+      'products:brands:all',
+      'products:categories:all',
+    ]);
 
     return this.toProductResponseDto(savedProduct);
   }
@@ -149,11 +165,29 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
   }
 
   async findOne(id: string): Promise<ProductResponseDto> {
+    // Try cache first
+    const cached = await this.cacheService.get<ProductResponseDto>(
+      CACHE_KEYS.PRODUCT_BY_ID(id),
+    );
+    if (cached) {
+      return cached;
+    }
+
     const product = await this.productModel.findById(id).exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-    return this.toProductResponseDto(product);
+
+    const responseDto = this.toProductResponseDto(product);
+    
+    // Cache the result for 1 hour
+    await this.cacheService.set(
+      CACHE_KEYS.PRODUCT_BY_ID(id),
+      responseDto,
+      CACHE_TTL.VERY_LONG,
+    );
+
+    return responseDto;
   }
 
   async findByIds(ids: string[]): Promise<ProductResponseDto[]> {
@@ -181,6 +215,15 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
     // Emit real-time WebSocket event
     this.productGateway.emitProductUpdated(this.toProductResponseDto(updatedProduct));
 
+    // Invalidate caches
+    await this.cacheService.del([
+      CACHE_KEYS.PRODUCTS_ALL,
+      CACHE_KEYS.PRODUCTS_FEATURED,
+      CACHE_KEYS.PRODUCT_BY_ID(id),
+      'products:brands:all',
+      'products:categories:all',
+    ]);
+
     return this.toProductResponseDto(updatedProduct);
   }
 
@@ -197,6 +240,15 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
 
     // Emit real-time WebSocket event
     this.productGateway.emitProductDeleted(product._id.toString(), product.category);
+
+    // Invalidate caches
+    await this.cacheService.del([
+      CACHE_KEYS.PRODUCTS_ALL,
+      CACHE_KEYS.PRODUCTS_FEATURED,
+      CACHE_KEYS.PRODUCT_BY_ID(id),
+      'products:brands:all',
+      'products:categories:all',
+    ]);
   }
 
   async updateStock(id: string, quantity: number): Promise<ProductResponseDto> {
@@ -234,31 +286,86 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
       );
     }
 
+    // Invalidate product cache since stock changed
+    await this.cacheService.del([
+      CACHE_KEYS.PRODUCT_BY_ID(id),
+      CACHE_KEYS.PRODUCTS_ALL,
+    ]);
+
     return this.toProductResponseDto(product);
   }
 
   async getCategories(): Promise<string[]> {
+    // Try cache first
+    const cached = await this.cacheService.get<string[]>(
+      'products:categories:all',
+    );
+    if (cached) {
+      return cached;
+    }
+
     const categories = await this.productModel
       .distinct('category', { isActive: true })
       .exec();
+
+    // Cache for 24 hours - categories rarely change
+    await this.cacheService.set(
+      'products:categories:all',
+      categories,
+      CACHE_TTL.EXTRA_LONG,
+    );
+
     return categories;
   }
 
   async getBrands(): Promise<string[]> {
+    // Try cache first
+    const cached = await this.cacheService.get<string[]>(
+      'products:brands:all',
+    );
+    if (cached) {
+      return cached;
+    }
+
     const brands = await this.productModel
       .distinct('brand', { isActive: true })
       .exec();
+
+    // Cache for 24 hours - brands rarely change
+    await this.cacheService.set(
+      'products:brands:all',
+      brands,
+      CACHE_TTL.EXTRA_LONG,
+    );
+
     return brands;
   }
 
   async getFeaturedProducts(limit: number = 10): Promise<ProductResponseDto[]> {
+    // Try cache first
+    const cached = await this.cacheService.get<ProductResponseDto[]>(
+      CACHE_KEYS.PRODUCTS_FEATURED,
+    );
+    if (cached) {
+      return cached;
+    }
+
     const products = await this.productModel
       .find({ isActive: true, isFeatured: true })
       .sort({ createdAt: -1 })
       .limit(limit)
       .exec();
 
-    return products.map((product) => this.toProductResponseDto(product));
+    const result = products.map((product) => this.toProductResponseDto(product));
+
+    // Cache for 30 minutes
+    await this.cacheService.set(
+      CACHE_KEYS.PRODUCTS_FEATURED,
+      result,
+      CACHE_TTL.LONG,
+    );
+
+    return result;
   }
 
   async searchProducts(
