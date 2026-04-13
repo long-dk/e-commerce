@@ -51,6 +51,7 @@
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.2.10",
     "@nestjs/platform-socket.io": "^10.4.22",
+    "@nestjs/throttler": "^5.1.2",
     "@nestjs/typeorm": "^9.0.1",
     "@nestjs/websockets": "^10.4.22",
     "@types/mongoose": "^5.11.96",
