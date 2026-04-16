@@ -1,6 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { LoggerService } from './logger.service';
 
 export interface CacheOptions {
@@ -70,7 +69,7 @@ export class CacheService {
    */
   async clear(): Promise<void> {
     try {
-      await this.cacheManager.reset();
+      await this.cacheManager.clear();
       this.logger.debug('Cache CLEARED');
     } catch (error) {
       this.logger.error('Cache clear error:', error);

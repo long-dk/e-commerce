@@ -3,10 +3,20 @@ import { ValidationPipe } from '@nestjs/common';
 import { InventoryModule } from './inventory.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Partitioners } from 'kafkajs';
-import { LoggerService } from '@app/common';
+import { LoggerService, TracingService, MetricsInterceptor } from '@app/common';
 
 async function bootstrap() {
+  // Initialize distributed tracing first
+  await TracingService.initializeTracing(
+    'inventory-service',
+    process.env.JAEGER_ENDPOINT || 'http://localhost:4317',
+  );
+
   const app = await NestFactory.create(InventoryModule);
+  const metricsInterceptor = app.get(MetricsInterceptor);
+
+  // Enable metrics interceptor globally
+  app.useGlobalInterceptors(metricsInterceptor);
 
   // Enable CORS for GraphQL and WebSocket connections
   app.enableCors({
@@ -53,10 +63,24 @@ async function bootstrap() {
   });
   
   const logger = app.get(LoggerService);
+  
+  // Handle graceful shutdown
+  const shutdown = async (signal: string) => {
+    logger.log(`Signal received: ${signal}, shutting down gracefully...`);
+    await app.close();
+    await TracingService.shutdown();
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  
+  await app.startAllMicroservices();
   // Start the application
   const port = process.env.INVENTORY_SERVICE_PORT || 4005;
   await app.listen(port);
-  logger.log(`🚀 Inventory Service is running on: http://localhost:${port}/graphql`);
+  logger.log(`✅ Inventory Service is running on: http://localhost:${port}/graphql`);
+  logger.log(`📊 Prometheus Metrics: http://localhost:${port}/metrics`);
   logger.log(`📡 WebSocket Gateway available at: ws://localhost:${port}/inventory`);
 }
 

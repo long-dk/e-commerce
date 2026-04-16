@@ -1,6 +1,5 @@
 import { CacheModuleOptions } from '@nestjs/cache-manager';
-import * as redisStore from 'cache-manager-redis-store';
-import type { RedisClientOptions } from 'redis';
+import KeyvRedis from '@keyv/redis';
 
 /**
  * Get Redis cache configuration
@@ -8,29 +7,15 @@ import type { RedisClientOptions } from 'redis';
  */
 export const getRedisCacheConfig = (): CacheModuleOptions => {
   const isProduction = process.env.NODE_ENV === 'production';
-  const redisHost = process.env.REDIS_HOST || 'localhost';
-  const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
-  const redisPassword = process.env.REDIS_PASSWORD;
-  const redisDb = parseInt(process.env.REDIS_DB || '0', 10);
-
-  const redisOptions: RedisClientOptions = {
-    host: redisHost,
-    port: redisPort,
-    db: redisDb,
-    ...(redisPassword && { password: redisPassword }),
-  };
-
   const defaultTtl = isProduction ? 3600000 : 1800000; // 1 hour prod, 30 min dev
+  const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
   return {
-    store: redisStore,
-    host: redisHost,
-    port: redisPort,
-    ...(redisPassword && { password: redisPassword }),
-    db: redisDb,
-    isGlobal: true,
-    ttl: defaultTtl, // Default TTL in milliseconds
-  } as any;
+    stores: [
+      new KeyvRedis(redisUrl),
+    ],
+    ttl: defaultTtl,
+  };
 };
 
 /**

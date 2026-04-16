@@ -1,12 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { ProductModule } from './product.module';
-import { LoggerService } from '@app/common';
+import { LoggerService, TracingService, MetricsInterceptor } from '@app/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Partitioners } from 'kafkajs';
 
 async function bootstrap() {
+  // Initialize distributed tracing first
+  await TracingService.initializeTracing(
+    'products-service',
+    process.env.JAEGER_ENDPOINT || 'http://localhost:4317',
+  );
+
   const app = await NestFactory.create(ProductModule);
   const logger = app.get(LoggerService);
+  const metricsInterceptor = app.get(MetricsInterceptor);
+
+  // Enable metrics interceptor globally
+  app.useGlobalInterceptors(metricsInterceptor);
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
@@ -44,11 +54,23 @@ async function bootstrap() {
     credentials: true,
   });
 
+  await app.startAllMicroservices();
   const port = process.env.PRODUCTS_SERVICE_PORT || 4002;
-
   await app.listen(port);
-  logger.log(`Products Service is running on port ${port}`);
+  logger.log(`✅ Products Service is running on port ${port}`);
+  logger.log(`📊 Prometheus Metrics: http://localhost:${port}/metrics`);
   logger.log(`WebSocket gateway available at ws://localhost:${port}/products`);
+
+  // Handle graceful shutdown
+  const shutdown = async (signal: string) => {
+    logger.log(`Signal received: ${signal}, shutting down gracefully...`);
+    await app.close();
+    await TracingService.shutdown();
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 bootstrap().catch((error) => {

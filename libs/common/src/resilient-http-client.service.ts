@@ -1,9 +1,10 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { CircuitBreakerService, CircuitBreakerFactory, CircuitBreakerConfig } from './circuit-breaker.service';
 import { RetryService, RetryFactory, RetryConfig } from './retry.service';
+import { LoggerService } from './logger.service';
 
 export interface ResilientHttpClientConfig {
   serviceName: string;
@@ -19,7 +20,8 @@ export interface ResilientHttpClientConfig {
 export class ResilientHttpClient {
   private circuitBreaker: CircuitBreakerService;
   private retryService: RetryService;
-  private readonly logger: Logger;
+  @Inject(LoggerService)
+  private readonly logger: LoggerService;
 
   constructor(
     private httpService: HttpService,
@@ -27,8 +29,6 @@ export class ResilientHttpClient {
     circuitBreakerFactory?: CircuitBreakerFactory,
     retryFactory?: RetryFactory,
   ) {
-    this.logger = new Logger(`ResilientHttpClient[${config.serviceName}]`);
-
     // Initialize circuit breaker
     const cbFactory = circuitBreakerFactory || new CircuitBreakerFactory();
     const cbConfig: CircuitBreakerConfig = {
@@ -236,8 +236,9 @@ export class ResilientHttpClient {
 @Injectable()
 export class ResilientHttpClientFactory {
   private clients = new Map<string, ResilientHttpClient>();
-  private readonly logger = new Logger(ResilientHttpClientFactory.name);
-
+  @Inject(LoggerService)
+  private readonly logger: LoggerService;
+  
   constructor(
     private httpService: HttpService,
     private circuitBreakerFactory: CircuitBreakerFactory,

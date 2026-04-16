@@ -1,11 +1,21 @@
 import { NestFactory } from '@nestjs/core';
 import { ApiGatewayModule } from './api-gateway.module';
-import { Logger } from '@nestjs/common';
-import { LoggerService } from '@app/common';
+import { LoggerService, TracingService, MetricsInterceptor, PrometheusMetricsService } from '@app/common';
 
 async function bootstrap() {
+  // Initialize distributed tracing first
+  await TracingService.initializeTracing(
+    'api-gateway',
+    process.env.JAEGER_ENDPOINT || 'http://localhost:4317',
+  );
+
   const app = await NestFactory.create(ApiGatewayModule);
   const logger = app.get(LoggerService);
+  const metricsService = app.get(PrometheusMetricsService);
+  const metricsInterceptor = app.get(MetricsInterceptor);
+
+  // Enable metrics interceptor globally
+  app.useGlobalInterceptors(metricsInterceptor);
 
   // Enable CORS
   app.enableCors({
@@ -23,6 +33,18 @@ async function bootstrap() {
   logger.log(`🔌 REST API: http://localhost:${port}/api/v1/:service/*`);
   logger.log(`❤️  Health Check: http://localhost:${port}/health`);
   logger.log(`📈 Service Status: http://localhost:${port}/health/services`);
+  logger.log(`📊 Prometheus Metrics: http://localhost:${port}/metrics`);
+
+  // Handle graceful shutdown
+  const shutdown = async (signal: string) => {
+    logger.log(`Signal received: ${signal}, shutting down gracefully...`);
+    await app.close();
+    await TracingService.shutdown();
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 bootstrap();

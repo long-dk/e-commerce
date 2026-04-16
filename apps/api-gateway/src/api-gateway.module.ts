@@ -8,8 +8,9 @@ import { HttpModule } from '@nestjs/axios';
 import { ServiceRegistry } from './service-registry';
 import { GatewayController } from './gateway.controller';
 import { HealthController } from './health.controller';
+import { MetricsController } from './metrics.controller';
 import { ProxyService } from './proxy.service';
-import { LoggerService } from '@app/common';
+import { LoggerService, MonitoringModule } from '@app/common';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { LoggerService } from '@app/common';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    MonitoringModule,
     // Rate limiting: 100 requests per 15 minutes per IP
     ThrottlerModule.forRoot([
       {
@@ -64,7 +66,7 @@ import { LoggerService } from '@app/common';
       inject: [ConfigService, ServiceRegistry],
     }),
   ],
-  controllers: [GatewayController, HealthController],
+  controllers: [GatewayController, HealthController, MetricsController],
   providers: [ServiceRegistry, ProxyService, LoggerService],
 })
 export class ApiGatewayModule {}
