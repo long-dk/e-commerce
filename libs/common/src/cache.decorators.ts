@@ -108,7 +108,7 @@ export function CacheInvalidate(options?: {
       const result = await originalMethod.apply(this, args);
 
       // Invalidate cache after method execution
-      const keysToInvalidate = [];
+      const keysToInvalidate: string[] = [];
       if (options?.key) {
         keysToInvalidate.push(options.key);
       }
@@ -197,7 +197,7 @@ export function CacheableWithInvalidation(options?: {
 
       // Invalidate specified keys
       if (options?.invalidate) {
-        const keysToInvalidate = [];
+        const keysToInvalidate: string[] = [];
         if (options.invalidate.key) {
           keysToInvalidate.push(options.invalidate.key);
         }
