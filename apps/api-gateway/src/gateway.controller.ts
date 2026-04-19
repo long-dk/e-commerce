@@ -15,7 +15,7 @@ import {
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ProxyService } from './proxy.service';
 import { ServiceRegistry } from './service-registry';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 @Controller('api/v1')
 @UseGuards(ThrottlerGuard)
@@ -75,7 +75,7 @@ export class GatewayController {
   /**
    * List all registered services
    */
-  @Get('services', { path: 'services' })
+  @Get('services')
   getServices(): any[] {
     return this.serviceRegistry.getAllServices().map((service) => ({
       name: service.name,

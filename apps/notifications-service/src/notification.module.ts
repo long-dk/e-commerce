@@ -9,7 +9,7 @@ import { NotificationGateway } from './notification.gateway';
 import { NotificationController } from './notification.controller';
 import { Notification } from './notification.entity';
 import { getNotificationsServicePostgresConfig } from '@app/database';
-import { LoggerService } from '@app/common';
+import { LoggerService, MonitoringModule } from '@app/common';
 
 @Module({
   imports: [
@@ -45,6 +45,7 @@ import { LoggerService } from '@app/common';
         },
       },
     ]),
+    MonitoringModule,
   ],
   controllers: [NotificationController],
   providers: [

@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { LoggerService } from './logger.service';
-import { In } from 'typeorm';
+import { Injectable } from '@nestjs/common';
+import { LoggerBase } from './logger.service';
 
 export enum BackoffStrategy {
   EXPONENTIAL = 'exponential',
@@ -32,10 +31,8 @@ export interface RetryMetrics {
  * Automatically retries failed requests with increasing delays
  */
 @Injectable()
-export class RetryService {
+export class RetryService extends LoggerBase {
   private readonly config: Required<RetryConfig>;
-  @Inject(LoggerService)
-  private readonly logger: LoggerService;
   private metrics: RetryMetrics = {
     totalAttempts: 0,
     successAttempts: 0,
@@ -44,6 +41,7 @@ export class RetryService {
   };
 
   constructor(config: RetryConfig = {}) {
+    super();
     this.config = {
       maxAttempts: config.maxAttempts ?? 3,
       initialDelay: config.initialDelay ?? 100,

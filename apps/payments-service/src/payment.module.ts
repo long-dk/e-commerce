@@ -9,7 +9,7 @@ import { PaymentResolver } from './payment.resolver';
 import { PaymentGateway } from './payment.gateway';
 import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { getPaymentsServicePostgresConfig } from '@app/database';
-import { LoggerService } from '@app/common';
+import { LoggerService, MonitoringModule } from '@app/common';
 import { PaymentController } from './payment.controller';
 
 @Module({
@@ -52,6 +52,7 @@ import { PaymentController } from './payment.controller';
         inject: [ConfigService],
       },
     ]),
+    MonitoringModule,
   ],
   controllers: [PaymentController],
   providers: [

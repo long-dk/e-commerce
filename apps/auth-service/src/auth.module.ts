@@ -16,7 +16,7 @@ import { GoogleStrategy } from './google.strategy';
 import { GithubStrategy } from './github.strategy';
 import { EmailService } from './email.service';
 import { getAuthServicePostgresConfig } from '@app/database';
-import { LoggerService } from '@app/common';
+import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
@@ -63,8 +63,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
     ]),
     PassportModule,
+    MonitoringModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, MetricsController],
   providers: [
     AuthService,
     UserService,

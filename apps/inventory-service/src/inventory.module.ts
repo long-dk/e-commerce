@@ -11,7 +11,7 @@ import { InventoryGateway } from './inventory.gateway';
 import { InventoryKafkaService } from './inventory.kafka';
 import { getInventoryServiceMongoConfig } from '@app/database';
 import { JwtModule } from '@nestjs/jwt';
-import { LoggerService } from '@app/common';
+import { LoggerService, MonitoringModule } from '@app/common';
 import { InventoryController } from './inventory.controller';
 
 @Module({
@@ -61,6 +61,7 @@ import { InventoryController } from './inventory.controller';
         },
       },
     ]),
+    MonitoringModule,
   ],
   controllers: [InventoryController],
   providers: [

@@ -63,6 +63,7 @@ async function bootstrap() {
   await app.startAllMicroservices();
   const port = process.env.SHIPPING_SERVICE_PORT || 4006;
   await app.listen(port);
-  logger.log(`✅ Shipping Service is running on port ${port}`);\n  logger.log(`📊 Prometheus Metrics: http://localhost:${port}/metrics`);
+  logger.log(`✅ Shipping Service is running on port ${port}`);
+  logger.log(`📊 Prometheus Metrics: http://localhost:${port}/metrics`);
 }
 bootstrap();

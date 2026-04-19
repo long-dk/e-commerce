@@ -79,9 +79,9 @@ services:
     env_file:
       - .env
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DATABASE_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${DATABASE_PASSWORD}
-      MONGO_INITDB_DATABASE: ${DATABASE_NAME}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE}
     ports:
       - "27017:27017"
     networks:
@@ -89,7 +89,7 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: echo "db.adminCommand('ping')" | mongosh -u ${DATABASE_USER} -p ${DATABASE_PASSWORD}
+      test: echo "db.adminCommand('ping')" | mongosh -u ${MONGODB_USER} -p ${MONGODB_PASSWORD}
       interval: 10s
       timeout: 5s
       retries: 5
@@ -228,6 +228,8 @@ services:
     container_name: prometheus
     ports:
       - "9090:9090"
+    env_file:
+      - .env
     networks:
       - ecommerce-network
     volumes:
@@ -253,6 +255,8 @@ services:
     container_name: grafana
     depends_on:
       - prometheus
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     networks:
@@ -278,6 +282,8 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger
+    env_file:
+      - .env
     ports:
       - "16686:16686"  # Jaeger UI
       - "4317:4317"    # OTLP gRPC receiver
@@ -296,18 +302,30 @@ services:
 
   # Prometheus AlertManager - Alert routing and management
   alertmanager:
-    image: prom/alertmanager:latest
+    build:
+      context: ./alert-manager
+      dockerfile: Dockerfile
+      args:
+        SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+        SLACK_ALERTS_CHANNEL: ${SLACK_ALERTS_CHANNEL:-#alerts}
+        SLACK_CRITICAL_CHANNEL: ${SLACK_CRITICAL_CHANNEL:-#critical-alerts}
+        SLACK_WARNING_CHANNEL: ${SLACK_WARNING_CHANNEL:-#warnings}
+        SLACK_PAYMENTS_CHANNEL: ${SLACK_PAYMENTS_CHANNEL:-#payments}
+        SLACK_ORDERS_CHANNEL: ${SLACK_ORDERS_CHANNEL:-#orders}
+        SLACK_INVENTORY_CHANNEL: ${SLACK_INVENTORY_CHANNEL:-#inventory}
+        SLACK_INFO_CHANNEL: ${SLACK_INFO_CHANNEL:-#debug}
     container_name: alertmanager
+    env_file:
+      - .env
     ports:
       - "9093:9093"
     networks:
       - ecommerce-network
     volumes:
-      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
       - alertmanager-data:/alertmanager
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
+    # command:
+      # - '--config.file=/etc/alertmanager/alertmanager.yml'
+      # - '--storage.path=/alertmanager'
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
       interval: 10s
@@ -366,6 +384,7 @@ services:
       - .env
     environment:
       SERVICE_NAME: ${PRODUCTS_SERVICE_NAME}
+      MONGODB_HOST: mongodb
       MONGODB_URI: ${PRODUCTS_MONGODB_URI}
       KAFKA_BROKERS: kafka:29092
     ports:
@@ -458,6 +477,7 @@ services:
       - .env
     environment:
       SERVICE_NAME: ${INVENTORY_SERVICE_NAME}
+      MONGODB_HOST: mongodb
       MONGODB_URI: ${INVENTORY_MONGODB_URI}
       KAFKA_BROKERS: kafka:29092
     ports:

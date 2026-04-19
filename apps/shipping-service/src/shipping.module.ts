@@ -10,7 +10,7 @@ import { ShippingGateway } from './shipping.gateway';
 import { ShippingKafkaService } from './shipping.kafka';
 import { JwtModule } from '@nestjs/jwt';
 import { getShippingServicePostgresConfig } from '@app/database';
-import { LoggerService } from '@app/common';
+import { LoggerService, MonitoringModule } from '@app/common';
 import { retry } from 'rxjs';
 
 @Module({
@@ -46,12 +46,13 @@ import { retry } from 'rxjs';
         },
       },
     ]),
-     JwtModule.register({
+    JwtModule.register({
       secret: process.env.JWT_SECRET || 'jwt-secret-key',
       signOptions: {
         expiresIn: process.env.JWT_EXPIRATION || '3600s',
       },
     }),
+    MonitoringModule,
   ],
   providers: [
     ShippingResolver,

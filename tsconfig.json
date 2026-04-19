@@ -33,7 +33,9 @@
       "@app/graphql": ["libs/graphql/src"],
       "@app/graphql/*": ["libs/graphql/src/*"],
       "@app/shared": ["libs/shared/src"],
-      "@app/shared/*": ["libs/shared/src/*"]
+      "@app/shared/*": ["libs/shared/src/*"],
+      "@app/cache": ["libs/cache/src"],
+      "@app/cache/*": ["libs/cache/src/*"]
     }
   }
 }

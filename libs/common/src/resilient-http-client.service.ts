@@ -4,7 +4,7 @@ import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { CircuitBreakerService, CircuitBreakerFactory, CircuitBreakerConfig } from './circuit-breaker.service';
 import { RetryService, RetryFactory, RetryConfig } from './retry.service';
-import { LoggerService } from './logger.service';
+import { LoggerBase } from './logger.service';
 
 export interface ResilientHttpClientConfig {
   serviceName: string;
@@ -17,11 +17,9 @@ export interface ResilientHttpClientConfig {
  * Provides fault-tolerant HTTP communication between microservices
  */
 @Injectable()
-export class ResilientHttpClient {
+export class ResilientHttpClient extends LoggerBase {
   private circuitBreaker: CircuitBreakerService;
   private retryService: RetryService;
-  @Inject(LoggerService)
-  private readonly logger: LoggerService;
 
   constructor(
     private httpService: HttpService,
@@ -29,6 +27,7 @@ export class ResilientHttpClient {
     circuitBreakerFactory?: CircuitBreakerFactory,
     retryFactory?: RetryFactory,
   ) {
+    super();
     // Initialize circuit breaker
     const cbFactory = circuitBreakerFactory || new CircuitBreakerFactory();
     const cbConfig: CircuitBreakerConfig = {
@@ -234,16 +233,16 @@ export class ResilientHttpClient {
  * Factory for managing resilient HTTP clients
  */
 @Injectable()
-export class ResilientHttpClientFactory {
+export class ResilientHttpClientFactory extends LoggerBase {
   private clients = new Map<string, ResilientHttpClient>();
-  @Inject(LoggerService)
-  private readonly logger: LoggerService;
   
   constructor(
     private httpService: HttpService,
     private circuitBreakerFactory: CircuitBreakerFactory,
     private retryFactory: RetryFactory,
-  ) {}
+  ) {
+    super(); 
+  }
 
   /**
    * Get or create a resilient HTTP client

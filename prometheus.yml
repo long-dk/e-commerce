@@ -1,0 +1,108 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: ecommerce-monitor
+    environment: development
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  # Prometheus Server Metrics
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # API Gateway
+  - job_name: "api-gateway"
+    static_configs:
+      - targets: ["api-gateway:4000"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: scheme
+
+  # Auth Service
+  - job_name: "auth-service"
+    static_configs:
+      - targets: ["auth-service:4001"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+
+  # Products Service
+  - job_name: "products-service"
+    static_configs:
+      - targets: ["products-service:4002"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+
+  # Orders Service
+  - job_name: "orders-service"
+    static_configs:
+      - targets: ["orders-service:4003"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+
+  # Payments Service
+  - job_name: "payments-service"
+    static_configs:
+      - targets: ["payments-service:4004"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+
+  # Inventory Service
+  - job_name: "inventory-service"
+    static_configs:
+      - targets: ["inventory-service:4005"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+
+  # Shipping Service
+  - job_name: "shipping-service"
+    static_configs:
+      - targets: ["shipping-service:4006"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+
+  # Notifications Service
+  - job_name: "notifications-service"
+    static_configs:
+      - targets: ["notifications-service:4007"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+
+  # Elasticsearch Metrics
+  - job_name: "elasticsearch"
+    static_configs:
+      - targets: ["elasticsearch:9200"]
+    metrics_path: "/_prometheus/metrics"
+    scrape_interval: 30s
+
+  # Kafka Metrics (if Kafka exporter is available)
+  # - job_name: "kafka"
+  #   static_configs:
+  #     - targets: ["kafka-exporter:9308"]
+  #   scrape_interval: 15s
+
+  # PostgreSQL Metrics (if postgres exporter is available)
+  # - job_name: "postgres"
+  #   static_configs:
+  #     - targets: ["postgres-exporter:9187"]
+  #   scrape_interval: 15s
+
+  # MongoDB Metrics (if mongodb exporter is available)
+  # - job_name: "mongodb"
+  #   static_configs:
+  #     - targets: ["mongodb-exporter:9216"]
+  #   scrape_interval: 15s

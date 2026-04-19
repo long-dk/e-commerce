@@ -16,14 +16,13 @@ import {
   OrderPlacedEvent,
   OrderCancelledEvent,
 } from '@app/kafka';
-import {
-  LoggerService,
+import { LoggerService } from '@app/common';
+import { 
   CacheService,
   Cacheable,
   CacheInvalidate,
   CACHE_TTL,
-  CACHE_KEYS,
-} from '@app/common';
+  CACHE_KEYS, } from '@app/cache';
 import { ProductGateway } from './product.gateway';
 import { ProductDocument } from './product.schema';
 import { ClientKafka } from '@nestjs/microservices';

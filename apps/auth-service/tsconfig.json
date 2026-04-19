@@ -4,6 +4,6 @@
     "declaration": false,
     "outDir": "../../dist/apps/auth-service"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../../libs/common/src/metrics.controller.ts"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

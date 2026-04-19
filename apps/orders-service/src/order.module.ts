@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { OrderController } from './order.controller';
 import { OrderResolver } from './order.resolver';
 import { OrderService } from './order.service';
@@ -11,7 +11,7 @@ import { Order, OrderItem } from './order.entity';
 import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { GraphQLJSONObject } from 'graphql-type-json';
 import { getOrdersServicePostgresConfig } from '@app/database';
-import { LoggerService } from '@app/common';
+import { LoggerService, MonitoringModule } from '@app/common';
 
 @Module({
   imports: [
@@ -56,6 +56,7 @@ import { LoggerService } from '@app/common';
         inject: [ConfigService],
       },
     ]),
+    MonitoringModule,
   ],
   controllers: [OrderController],
   providers: [

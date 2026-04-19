@@ -1,0 +1,22 @@
+FROM alpine:latest AS builder
+
+RUN apk add --no-cache envsubst
+WORKDIR /alm
+
+ARG SLACK_WEBHOOK_URL SLACK_INFO_CHANNEL SLACK_WARNING_CHANNEL SLACK_CRITICAL_CHANNEL 
+ARG SLACK_ALERTS_CHANNEL SLACK_PAYMENTS_CHANNEL SLACK_ORDERS_CHANNEL SLACK_INVENTORY_CHANNEL
+ENV SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL} 
+ENV SLACK_INFO_CHANNEL=${SLACK_INFO_CHANNEL}
+ENV SLACK_WARNING_CHANNEL=${SLACK_WARNING_CHANNEL}
+ENV SLACK_CRITICAL_CHANNEL=${SLACK_CRITICAL_CHANNEL}
+ENV SLACK_ALERTS_CHANNEL=${SLACK_ALERTS_CHANNEL}
+ENV SLACK_PAYMENTS_CHANNEL=${SLACK_PAYMENTS_CHANNEL}
+ENV SLACK_ORDERS_CHANNEL=${SLACK_ORDERS_CHANNEL}
+ENV SLACK_INVENTORY_CHANNEL=${SLACK_INVENTORY_CHANNEL}
+COPY ./alertmanager.template.yml ./alertmanager.template.yml
+RUN envsubst < ./alertmanager.template.yml > ./alertmanager.yml
+
+FROM prom/alertmanager:latest
+
+COPY --from=builder /alm/alertmanager.yml /etc/alertmanager/alertmanager.yml
+ENTRYPOINT [ "alertmanager", "--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager" ]

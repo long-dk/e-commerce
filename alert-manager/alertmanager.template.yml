@@ -1,0 +1,157 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: "${SLACK_WEBHOOK_URL}"
+  # pagerduty_url: "https://events.pagerduty.com/v2/enqueue"
+
+# The root route with all parameters, which are inherited by the child routes if they are not overwritten.
+route:
+  receiver: "default-receiver"
+  group_by: ["alertname", "service", "severity"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: "critical-receiver"
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true
+
+    # Warning alerts - normal notification
+    - match:
+        severity: warning
+      receiver: "warning-receiver"
+      group_wait: 1m
+      repeat_interval: 4h
+      continue: true
+
+    # Payment service - route to dedicated receiver
+    - match:
+        service: "payments-service"
+      receiver: "payments-receiver"
+      group_wait: 30s
+      repeat_interval: 2h
+      continue: true
+
+    # Orders service - route to dedicated receiver
+    - match:
+        service: "orders-service"
+      receiver: "orders-receiver"
+      group_wait: 30s
+      repeat_interval: 2h
+      continue: true
+
+    # Inventory alerts
+    - match:
+        service: "inventory-service"
+      receiver: "inventory-receiver"
+      group_wait: 2m
+      repeat_interval: 6h
+      continue: true
+
+    # Info/Notice alerts
+    - match:
+        severity: info
+      receiver: "info-receiver"
+      group_wait: 5m
+      repeat_interval: 24h
+      continue: true
+
+receivers:
+  # Default receiver - sends to a general Slack channel
+  - name: "default-receiver"
+    slack_configs:
+      - channel: "${SLACK_ALERTS_CHANNEL}"
+        title: "Alert: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+        send_resolved: true
+        color: "{{ if eq .Status \"firing\" }}danger{{ else }}good{{ end }}"
+    # email_configs:
+    #   - to: "ops@example.com"
+    #     from: "alertmanager@example.com"
+    #     smarthost: "smtp.example.com:587"
+    #     auth_username: "alertmanager@example.com"
+    #     auth_password: "password"
+    #     headers:
+    #       Subject: "Alert: {{ .GroupLabels.alertname }}"
+
+  # Critical alerts - sent to critical Slack channel
+  - name: "critical-receiver"
+    slack_configs:
+      - channel: "${SLACK_CRITICAL_CHANNEL}"
+        title: "🚨 CRITICAL: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}\nRunbook: {{ .Annotations.runbook_url }}\n{{ end }}"
+        send_resolved: true
+        color: "danger"
+    # pagerduty_configs:
+    #   - service_key: "{{ .GroupLabels.pagerduty_service_key }}"
+
+  # Warning alerts - sent to warnings Slack channel
+  - name: "warning-receiver"
+    slack_configs:
+      - channel: "${SLACK_WARNINGS_CHANNEL}"
+        title: "⚠️  WARNING: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+        send_resolved: true
+        color: "warning"
+
+  # Payments service receiver
+  - name: "payments-receiver"
+    slack_configs:
+      - channel: "${SLACK_PAYMENTS_CHANNEL}"
+        title: "💳 {{ .Status | toUpper }}: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+        send_resolved: true
+
+  # Orders service receiver
+  - name: "orders-receiver"
+    slack_configs:
+      - channel: "${SLACK_ORDERS_CHANNEL}"
+        title: "📦 {{ .Status | toUpper }}: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+        send_resolved: true
+
+  # Inventory service receiver
+  - name: "inventory-receiver"
+    slack_configs:
+      - channel: "${SLACK_INVENTORY_CHANNEL}"
+        title: "📊 {{ .Status | toUpper }}: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+        send_resolved: true
+
+  # Info receiver - sends to debug channel
+  - name: "info-receiver"
+    slack_configs:
+      - channel: "${SLACK_INFO_CHANNEL}"
+        title: "ℹ️  INFO: {{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+        send_resolved: true
+        color: "good"
+
+# Inhibit rules prevent notifications of alerts that match certain condition sets
+inhibit_rules:
+  # Don't send "Service Down" alert if "High Error Rate" is already firing
+  - source_match:
+      alertname: "HighErrorRate"
+      severity: "warning"
+    target_match:
+      alertname: "ServiceDown"
+      severity: "critical"
+    equal: ["service"]
+
+  # Silence low-priority alerts if critical alerts are already firing
+  - source_match:
+      severity: "critical"
+    target_match:
+      severity: "warning"
+    equal: ["service"]
+
+  # Don't send resolved notifications for info level alerts
+  - source_match:
+      severity: "info"
+    target_match_re:
+      severity: "^(warning|critical)$"
+    equal: ["alertname", "service"]

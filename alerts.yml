@@ -1,0 +1,234 @@
+groups:
+  - name: ecommerce_alerts
+    interval: 30s
+    rules:
+      # ==================== SERVICE HEALTH ALERTS ====================
+      
+      - alert: ServiceDown
+        expr: up{job=~".*-service|api-gateway"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "{{ $labels.job }} is DOWN"
+          description: "Service {{ $labels.job }} has been unreachable for more than 2 minutes."
+          runbook_url: "https://wiki.example.com/alerts/service-down"
+
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (job) /
+            sum(rate(http_requests_total[5m])) by (job)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "{{ $labels.job }} has error rate > 5% (current: {{ $value | humanizePercentage }})"
+
+      - alert: ServiceHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(http_request_duration_ms_bucket[5m])) by (job, le)
+          ) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High latency detected on {{ $labels.job }}"
+          description: "P95 latency on {{ $labels.job }} exceeds 1 second (current: {{ $value | humanize }}ms)"
+
+      # ==================== PAYMENT SERVICE ALERTS ====================
+
+      - alert: PaymentSuccessRateLow
+        expr: |
+          payment_success_rate < 0.95
+        for: 10m
+        labels:
+          severity: critical
+          service: payments-service
+        annotations:
+          summary: "Payment success rate below 95%"
+          description: "Payment service success rate is {{ $value | humanizePercentage }} - investigate payment failures"
+
+      - alert: PaymentProcessingSlowDown
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(payment_processing_duration_ms_bucket[5m])) by (method, le)
+          ) > 5000
+        for: 5m
+        labels:
+          severity: warning
+          service: payments-service
+        annotations:
+          summary: "Payment processing time exceeds 5 seconds"
+          description: "Payment method {{ $labels.method }} taking {{ $value | humanize }}ms (P95)"
+
+      - alert: HighPaymentFailureRate
+        expr: |
+          (
+            sum(rate(payments_total{status="failed"}[5m])) by (job) /
+            sum(rate(payments_total[5m])) by (job)
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: payments-service
+        annotations:
+          summary: "High payment failure rate detected"
+          description: "Payment failure rate: {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      # ==================== ORDER PROCESSING ALERTS ====================
+
+      - alert: OrderProcessingDelayed
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(order_processing_duration_ms_bucket[5m])) by (step, le)
+          ) > 10000
+        for: 5m
+        labels:
+          severity: warning
+          service: orders-service
+        annotations:
+          summary: "Order processing step {{ $labels.step }} is slow"
+          description: "Step {{ $labels.step }} taking {{ $value | humanize }}ms (P95)"
+
+      - alert: OrderCreationSpikeDetected
+        expr: |
+          rate(orders_total[5m]) > 100
+        for: 2m
+        labels:
+          severity: info
+          service: orders-service
+        annotations:
+          summary: "High order creation rate detected"
+          description: "Order creation rate: {{ $value | humanize }} orders/sec"
+
+      # ==================== INVENTORY ALERTS ====================
+
+      - alert: InventoryLevelLow
+        expr: |
+          inventory_level{status="low"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: inventory-service
+        annotations:
+          summary: "Inventory level is low for product {{ $labels.product_id }}"
+          description: "Current stock: {{ $value | humanize }} units"
+
+      - alert: MassInventoryAdjustment
+        expr: |
+          rate(inventory_adjustments_total[5m]) > 50
+        for: 2m
+        labels:
+          severity: info
+          service: inventory-service
+        annotations:
+          summary: "High inventory adjustment rate detected"
+          description: "Adjustment rate: {{ $value | humanize }} per second"
+
+      # ==================== NOTIFICATION ALERTS ====================
+
+      - alert: NotificationDeliveryFailure
+        expr: |
+          (
+            sum(rate(notifications_sent_total{status="failed"}[5m])) by (type) /
+            sum(rate(notifications_sent_total[5m])) by (type)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: notifications-service
+        annotations:
+          summary: "High notification failure rate for {{ $labels.type }}"
+          description: "Failure rate: {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # ==================== DATABASE ALERTS ====================
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          (
+            db_connection_pool_used /
+            db_connection_pool_size
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          database: "{{ $labels.database }}"
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $labels.database }} pool usage: {{ $value | humanizePercentage }} (threshold: 80%)"
+
+      - alert: DatabaseConnectionPoolFull
+        expr: |
+          (
+            db_connection_pool_used /
+            db_connection_pool_size
+          ) >= 0.95
+        for: 1m
+        labels:
+          severity: critical
+          database: "{{ $labels.database }}"
+        annotations:
+          summary: "Database connection pool is FULL"
+          description: "{{ $labels.database }} pool is {{ $value | humanizePercentage }} full - new connections will be rejected"
+
+      # ==================== CACHE ALERTS ====================
+
+      - alert: CacheMissRate
+        expr: |
+          (
+            sum(rate(cache_misses_total[5m])) by (service) /
+            (sum(rate(cache_hits_total[5m])) by (service) + sum(rate(cache_misses_total[5m])) by (service))
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: info
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "High cache miss rate on {{ $labels.service }}"
+          description: "Cache miss rate: {{ $value | humanizePercentage }} (threshold: 50%)"
+
+      # ==================== KAFKA ALERTS ====================
+
+      - alert: KafkaMessagesBacklog
+        expr: |
+          rate(kafka_messages_total[5m]) < 1
+        for: 5m
+        labels:
+          severity: info
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "Kafka message processing rate very low"
+          description: "Service {{ $labels.service }} processing {{ $value | humanize }} messages/sec"
+
+      # ==================== GENERAL INFRASTRUCTURE ALERTS ====================
+
+      - alert: HTTPRequestSizeAnomaly
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_size_bytes_bucket[5m])) by (endpoint, le)
+          ) > 1048576  # 1MB
+        for: 5m
+        labels:
+          severity: warning
+          endpoint: "{{ $labels.endpoint }}"
+        annotations:
+          summary: "Unusually large HTTP requests detected on {{ $labels.endpoint }}"
+          description: "P95 request size: {{ $value | humanize }}B"
+
+      - alert: GraphQLSubscriptionAbandonment
+        expr: |
+          active_connections{service=~"products-service|orders-service"} == 0
+        for: 10m
+        labels:
+          severity: warning
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "No active WebSocket subscriptions on {{ $labels.service }}"
+          description: "No active connections for real-time updates"

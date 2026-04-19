@@ -8,16 +8,13 @@ import { HttpModule } from '@nestjs/axios';
 import { ServiceRegistry } from './service-registry';
 import { GatewayController } from './gateway.controller';
 import { HealthController } from './health.controller';
-import { MetricsController } from './metrics.controller';
 import { ProxyService } from './proxy.service';
-import { LoggerService, MonitoringModule } from '@app/common';
+import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
+import { RegistryModule } from './registry.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
+    RegistryModule,
     MonitoringModule,
     // Rate limiting: 100 requests per 15 minutes per IP
     ThrottlerModule.forRoot([

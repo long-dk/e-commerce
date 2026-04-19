@@ -8,11 +8,11 @@ import { ProductResolver } from './product.resolver';
 import { ProductGateway } from './product.gateway';
 import { Product, ProductSchema } from './product.schema';
 import { getProductsServiceMongoConfig } from '@app/database';
-import { LoggerService } from '@app/common';
+import { LoggerService, MonitoringModule } from '@app/common';
 import { ProductController } from './product.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { retry } from 'rxjs';
-
+import { CacheModule } from '@app/cache';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -50,6 +50,8 @@ import { retry } from 'rxjs';
         },
       },
     ]),
+    CacheModule,
+    MonitoringModule,
   ],
   controllers: [ProductController],
   providers: [
@@ -60,7 +62,7 @@ import { retry } from 'rxjs';
     {
       provide: 'PUB_SUB',
       useValue: new (require('graphql-subscriptions').PubSub)(),
-    }
+    },
   ],
 })
 export class ProductModule {}

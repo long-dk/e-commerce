@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { In } from 'typeorm';
 import { Logger } from 'winston';
 import * as winston from 'winston';
 
@@ -54,4 +55,10 @@ export class LoggerService {
   debug(message: string, meta?: any) {
     this.logger.debug(message, meta);
   }
+}
+
+@Injectable()
+export class LoggerBase {
+  @Inject(LoggerService)
+  readonly logger: LoggerService;
 }

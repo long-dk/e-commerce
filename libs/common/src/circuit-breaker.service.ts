@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { LoggerService } from './logger.service';
+import { Injectable } from '@nestjs/common';
+import { LoggerBase } from './logger.service';
 
 export enum CircuitBreakerState {
   CLOSED = 'CLOSED',       // Normal operation
@@ -29,7 +29,7 @@ export interface CircuitBreakerMetrics {
  * Prevents cascading failures in microservices by stopping requests to failing services
  */
 @Injectable()
-export class CircuitBreakerService {
+export class CircuitBreakerService extends LoggerBase {
   private state: CircuitBreakerState = CircuitBreakerState.CLOSED;
   private failureCount = 0;
   private successCount = 0;
@@ -38,10 +38,9 @@ export class CircuitBreakerService {
   private lastErrorMessage?: string;
 
   private readonly config: Required<CircuitBreakerConfig>;
-  @Inject(LoggerService)
-  private readonly logger: LoggerService;
 
   constructor(config: CircuitBreakerConfig) {
+    super();
     this.config = {
       name: config.name,
       failureThreshold: config.failureThreshold ?? 5,
@@ -177,10 +176,8 @@ export class CircuitBreakerService {
  * Factory for managing circuit breakers
  */
 @Injectable()
-export class CircuitBreakerFactory {
+export class CircuitBreakerFactory extends LoggerBase {
   private breakers = new Map<string, CircuitBreakerService>();
-  @Inject(LoggerService)
-  private readonly logger: LoggerService;
 
   /**
    * Get or create a circuit breaker for a service
