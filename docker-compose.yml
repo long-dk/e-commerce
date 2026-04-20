@@ -334,6 +334,35 @@ services:
     restart: unless-stopped
 
   # ==================== MICROSERVICES ====================
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: ${API_GATEWAY_NAME}
+    container_name: api-gateway
+    depends_on:
+      - auth-service
+      - products-service
+      - orders-service
+      - payments-service
+      - inventory-service
+      - shipping-service
+      - notifications-service
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: ${API_GATEWAY_NAME}
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "4000:4000"
+    volumes:
+      - app-logs:${LOGS_DIR:-/app/logs}
+    networks:
+      - ecommerce-network
+    command: node dist/apps/api-gateway/main
+    restart: unless-stopped
 
   # Auth Service
   auth-service:
@@ -445,11 +474,11 @@ services:
       - .env
     environment:
       SERVICE_NAME: ${PAYMENTS_SERVICE_NAME}
-      PAYMENTS_DB_HOST: postgres
-      PAYMENTS_DB_PORT: ${DATABASE_PORT}
-      PAYMENTS_DB_USERNAME: ${DATABASE_USER}
-      PAYMENTS_DB_PASSWORD: ${DATABASE_PASSWORD}
-      PAYMENTS_DB_NAME: ${DATABASE_NAME}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
       KAFKA_BROKERS: kafka:29092
     ports:
       - "4004:4004"

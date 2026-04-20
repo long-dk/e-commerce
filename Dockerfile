@@ -8,7 +8,7 @@ WORKDIR /app
 ARG SERVICE_NAME
 
 # Copy monorepo files
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml ./
 COPY nest-cli.json tsconfig.json tsconfig.build.json ./
 
 # Copy apps and libs
@@ -16,10 +16,11 @@ COPY apps ./apps
 COPY libs ./libs
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN corepack enable
+RUN pnpm install --frozen-lockfile
 
 # Build the application
-RUN yarn build ${SERVICE_NAME}
+RUN pnpm run build ${SERVICE_NAME}
 
 # Production stage
 FROM base AS runner
@@ -32,10 +33,11 @@ ARG SERVICE_NAME
 RUN apk add --no-cache dumb-init
 
 # Copy package files
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install production dependencies only
-RUN yarn install --frozen-lockfile --production
+RUN corepack enable
+RUN pnpm install --frozen-lockfile --production
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist

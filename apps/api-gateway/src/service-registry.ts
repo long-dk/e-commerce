@@ -43,27 +43,27 @@ export class ServiceRegistry {
         timeout: 10000,
         retries: 2,
       },
-      inventory: {
-        name: 'inventory',
-        url: this.configService.get('INVENTORY_SERVICE_API', 'http://localhost:4005/graphql'),
-        restBase: this.configService.get('INVENTORY_SERVICE_REST', 'http://localhost:4005'),
-        timeout: 10000,
-        retries: 2,
-      },
-      shipping: {
-        name: 'shipping',
-        url: this.configService.get('SHIPPING_SERVICE_API', 'http://localhost:4006/graphql'),
-        restBase: this.configService.get('SHIPPING_SERVICE_REST', 'http://localhost:4006'),
-        timeout: 10000,
-        retries: 2,
-      },
-      notifications: {
-        name: 'notifications',
-        url: this.configService.get('NOTIFICATIONS_SERVICE_API', 'http://localhost:4007/graphql'),
-        restBase: this.configService.get('NOTIFICATIONS_SERVICE_REST', 'http://localhost:4007'),
-        timeout: 10000,
-        retries: 2,
-      },
+      // inventory: {
+      //   name: 'inventory',
+      //   url: this.configService.get('INVENTORY_SERVICE_API', 'http://localhost:4005/graphql'),
+      //   restBase: this.configService.get('INVENTORY_SERVICE_REST', 'http://localhost:4005'),
+      //   timeout: 10000,
+      //   retries: 2,
+      // },
+      // shipping: {
+      //   name: 'shipping',
+      //   url: this.configService.get('SHIPPING_SERVICE_API', 'http://localhost:4006/graphql'),
+      //   restBase: this.configService.get('SHIPPING_SERVICE_REST', 'http://localhost:4006'),
+      //   timeout: 10000,
+      //   retries: 2,
+      // },
+      // notifications: {
+      //   name: 'notifications',
+      //   url: this.configService.get('NOTIFICATIONS_SERVICE_API', 'http://localhost:4007/graphql'),
+      //   restBase: this.configService.get('NOTIFICATIONS_SERVICE_REST', 'http://localhost:4007'),
+      //   timeout: 10000,
+      //   retries: 2,
+      // },
     };
 
     Object.values(services).forEach((config) => {
