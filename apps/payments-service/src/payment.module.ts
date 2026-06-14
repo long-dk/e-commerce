@@ -11,6 +11,7 @@ import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/ap
 import { getPaymentsServicePostgresConfig } from '@app/database';
 import { LoggerService, MonitoringModule } from '@app/common';
 import { PaymentController } from './payment.controller';
+import { AuthModule } from '../../../libs/shared/src/auth';
 
 @Module({
   imports: [
@@ -51,8 +52,7 @@ import { PaymentController } from './payment.controller';
         }),
         inject: [ConfigService],
       },
-    ]),
-    MonitoringModule,
+    ]),    AuthModule,    MonitoringModule,
   ],
   controllers: [PaymentController],
   providers: [

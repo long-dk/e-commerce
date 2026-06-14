@@ -12,6 +12,7 @@ import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/ap
 import { GraphQLJSONObject } from 'graphql-type-json';
 import { getOrdersServicePostgresConfig } from '@app/database';
 import { LoggerService, MonitoringModule } from '@app/common';
+import { AuthModule } from '../../../libs/shared/src/auth';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { LoggerService, MonitoringModule } from '@app/common';
         inject: [ConfigService],
       },
     ]),
+    AuthModule,
     MonitoringModule,
   ],
   controllers: [OrderController],

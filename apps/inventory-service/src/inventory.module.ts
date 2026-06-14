@@ -10,9 +10,9 @@ import { InventoryService } from './inventory.service';
 import { InventoryGateway } from './inventory.gateway';
 import { InventoryKafkaService } from './inventory.kafka';
 import { getInventoryServiceMongoConfig } from '@app/database';
-import { JwtModule } from '@nestjs/jwt';
 import { LoggerService, MonitoringModule } from '@app/common';
 import { InventoryController } from './inventory.controller';
+import { AuthModule } from '../../../libs/shared/src/auth';
 
 @Module({
   imports: [
@@ -22,12 +22,7 @@ import { InventoryController } from './inventory.controller';
       { name: Inventory.name, schema: InventorySchema },
       { name: StockMovement.name, schema: StockMovementSchema },
     ]),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'jwt-secret-key',
-      signOptions: {
-        expiresIn: process.env.JWT_EXPIRATION || '3600s',
-      },
-    }),
+    AuthModule,
     // GraphQL configuration
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
