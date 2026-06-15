@@ -16,7 +16,7 @@ export class OrderResolver {
     @Args('input', { nullable: true }) input: OrdersInput,
     @CurrentUser() user: any,
   ): Promise<Order[]> {
-    return this.orderService.findAll(user.id, input);
+    return this.orderService.findAll(user.userId, input);
   }
 
   @Query(() => Order)
@@ -25,7 +25,7 @@ export class OrderResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: any,
   ): Promise<Order> {
-    return this.orderService.findOne(id, user.id);
+    return this.orderService.findOne(id, user.userId);
   }
 
   @Query(() => Int)
@@ -34,7 +34,7 @@ export class OrderResolver {
     @Args('input', { nullable: true }) input: OrdersInput,
     @CurrentUser() user: any,
   ): Promise<number> {
-    return this.orderService.count(user.id, input);
+    return this.orderService.count(user.userId, input);
   }
 
   @Mutation(() => Order)
@@ -43,7 +43,7 @@ export class OrderResolver {
     @Args('input') input: CreateOrderInput,
     @CurrentUser() user: any,
   ): Promise<Order> {
-    return this.orderService.create(input, user.id);
+    return this.orderService.create(input, user.userId);
   }
 
   @Mutation(() => Order)
@@ -53,7 +53,7 @@ export class OrderResolver {
     @Args('input') input: UpdateOrderInput,
     @CurrentUser() user: any,
   ): Promise<Order> {
-    return this.orderService.update(id, input, user.id);
+    return this.orderService.update(id, input, user.userId);
   }
 
   @Mutation(() => Order)
@@ -62,7 +62,7 @@ export class OrderResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: any,
   ): Promise<Order> {
-    return this.orderService.cancel(id, user.id);
+    return this.orderService.cancel(id, user.userId);
   }
 
   @Mutation(() => Order)
@@ -71,7 +71,7 @@ export class OrderResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: any,
   ): Promise<Order> {
-    return this.orderService.confirm(id, user.id);
+    return this.orderService.confirm(id, user.userId);
   }
 
   @Mutation(() => Order)
@@ -82,7 +82,7 @@ export class OrderResolver {
     @Args('carrier', { nullable: true }) carrier: string,
     @CurrentUser() user: any,
   ): Promise<Order> {
-    return this.orderService.ship(id, { trackingNumber, carrier }, user.id);
+    return this.orderService.ship(id, { trackingNumber, carrier }, user.userId);
   }
 
   @Mutation(() => Order)
@@ -91,7 +91,7 @@ export class OrderResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: any,
   ): Promise<Order> {
-    return this.orderService.deliver(id, user.id);
+    return this.orderService.deliver(id, user.userId);
   }
 
   @Mutation(() => Order)
@@ -101,7 +101,7 @@ export class OrderResolver {
     @Args('amount', { type: () => Int, nullable: true }) amount: number,
     @CurrentUser() user: any,
   ): Promise<Order> {
-    return this.orderService.processRefund(id, amount, user.id);
+    return this.orderService.processRefund(id, amount, user.userId);
   }
 
   // Admin-only mutations (would need admin guard in real implementation)

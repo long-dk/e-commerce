@@ -30,7 +30,7 @@ export class PaymentResolver {
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() user: any,
   ): Promise<PaymentType> {
-    return this.paymentService.findOne(id, user.id);
+    return this.paymentService.findOne(id, user.userId);
   }
 
   @Query(() => PaginatedPayments)
@@ -41,7 +41,7 @@ export class PaymentResolver {
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
   ): Promise<PaginatedPayments> {
     if (!user) throw new Error('User not authenticated');
-    return this.paymentService.findAll(filters, pagination, user.id);
+    return this.paymentService.findAll(filters, pagination, user.userId);
   }
 
   @Query(() => PaymentSummary)
@@ -51,7 +51,7 @@ export class PaymentResolver {
     @Args('filters', { nullable: true }) filters?: PaymentFiltersDto,
   ): Promise<PaymentSummary> {
     if (!user) throw new Error('User not authenticated');
-    return this.paymentService.getSummary(filters, user.id);
+    return this.paymentService.getSummary(filters, user.userId);
   }
 
   @Query(() => [PaymentType])
@@ -60,7 +60,7 @@ export class PaymentResolver {
     @Args('orderId', { type: () => ID }) orderId: string,
     @CurrentUser() user: any,
   ): Promise<PaymentType[]> {
-    return this.paymentService.findByOrder(orderId, user.id);
+    return this.paymentService.findByOrder(orderId, user.userId);
   }
 
   @Mutation(() => PaymentType)
@@ -69,7 +69,7 @@ export class PaymentResolver {
     @Args('input') input: CreatePaymentDto,
     @CurrentUser() user: any,
   ): Promise<PaymentType> {
-    return this.paymentService.create(input, user.id);
+    return this.paymentService.create(input, user.userId);
   }
 
   @Mutation(() => PaymentType)
@@ -78,7 +78,7 @@ export class PaymentResolver {
     @Args('input') input: ProcessPaymentDto,
     @CurrentUser() user: any,
   ): Promise<PaymentType> {
-    return this.paymentService.processPayment(input.paymentId, input, user.id);
+    return this.paymentService.processPayment(input.paymentId, input, user.userId);
   }
 
   @Mutation(() => PaymentType)
@@ -88,7 +88,7 @@ export class PaymentResolver {
     @Args('paymentId', { type: () => ID }) paymentId: string,
     @Args('transactionId', { nullable: true }) transactionId?: string,
   ): Promise<PaymentType> {
-    return this.paymentService.completePayment(paymentId, transactionId, user.id);
+    return this.paymentService.completePayment(paymentId, transactionId, user.userId);
   }
 
   @Mutation(() => PaymentType)
@@ -98,7 +98,7 @@ export class PaymentResolver {
     @Args('paymentId', { type: () => ID }) paymentId: string,
     @Args('reason', { nullable: true }) reason?: string,
   ): Promise<PaymentType> {
-    return this.paymentService.failPayment(paymentId, reason, user.id);
+    return this.paymentService.failPayment(paymentId, reason, user.userId);
   }
 
   @Mutation(() => PaymentType)
@@ -107,7 +107,7 @@ export class PaymentResolver {
     @Args('input') input: RefundPaymentDto,
     @CurrentUser() user: any,
   ): Promise<PaymentType> {
-    return this.paymentService.refundPayment(input.paymentId, input.amount, input.reason, user.id);
+    return this.paymentService.refundPayment(input.paymentId, input.amount, input.reason, user.userId);
   }
 
   @Mutation(() => PaymentType)
@@ -116,7 +116,7 @@ export class PaymentResolver {
     @Args('input') input: CancelPaymentDto,
     @CurrentUser() user: any,
   ): Promise<PaymentType> {
-    return this.paymentService.cancelPayment(input.paymentId, input.reason, user.id);
+    return this.paymentService.cancelPayment(input.paymentId, input.reason, user.userId);
   }
 
   @Mutation(() => Boolean)
@@ -125,6 +125,6 @@ export class PaymentResolver {
     @Args('paymentId', { type: () => ID }) paymentId: string,
     @CurrentUser() user: any,
   ): Promise<boolean> {
-    return this.paymentService.retryPayment(paymentId, user.id);
+    return this.paymentService.retryPayment(paymentId, user.userId);
   }
 }
