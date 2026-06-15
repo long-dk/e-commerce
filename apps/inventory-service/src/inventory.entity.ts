@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Field, ObjectType, ID, Float, Int } from '@nestjs/graphql';
+import { uuidv7Plugin } from '@app/database';
 
 export type InventoryDocument = Inventory & Document;
 
@@ -207,6 +208,7 @@ export class Inventory {
 }
 
 export const InventorySchema = SchemaFactory.createForClass(Inventory);
+InventorySchema.plugin(uuidv7Plugin);
 
 // Indexes for performance
 InventorySchema.index({ productId: 1 }, { unique: true });

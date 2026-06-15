@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { uuidv7Plugin } from '@app/database';
 
 export type ProductDocument = Product & Document;
 
@@ -91,6 +92,7 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
+ProductSchema.plugin(uuidv7Plugin);
 
 // Add text indexes for search
 ProductSchema.index({ name: 'text', description: 'text', tags: 'text' });

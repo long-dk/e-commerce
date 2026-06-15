@@ -1,4 +1,5 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { UuidV7Subscriber } from './uuid-v7.subscriber';
 
 /**
  * Generic PostgreSQL configuration factory
@@ -16,6 +17,7 @@ const getPostgresBaseConfig = (databaseName: string): TypeOrmModuleOptions => ({
   logging: process.env.NODE_ENV === 'development',
   migrations: ['dist/migrations/*.js'],
   migrationsRun: false,
+  subscribers: [UuidV7Subscriber],
 });
 
 /**

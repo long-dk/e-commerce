@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { Field, ObjectType, ID, Float } from '@nestjs/graphql';
 import { StockMovementType } from './inventory.entity';
+import { uuidv7Plugin } from '@app/database';
 
 export type StockMovementDocument = StockMovement & Document;
 
@@ -97,6 +98,7 @@ export class StockMovement {
 }
 
 export const StockMovementSchema = SchemaFactory.createForClass(StockMovement);
+StockMovementSchema.plugin(uuidv7Plugin);
 
 // Indexes for performance
 StockMovementSchema.index({ productId: 1, createdAt: -1 });
