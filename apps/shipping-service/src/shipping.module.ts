@@ -9,9 +9,10 @@ import { ShippingService } from './shipping.service';
 import { ShippingGateway } from './shipping.gateway';
 import { ShippingKafkaService } from './shipping.kafka';
 import { getShippingServicePostgresConfig } from '@app/database';
-import { LoggerService, MonitoringModule } from '@app/common';
+import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { retry } from 'rxjs';
 import { AuthModule } from '../../../libs/shared/src/auth';
+import { ShippingController } from './shipping.controller';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AuthModule } from '../../../libs/shared/src/auth';
     AuthModule,
     MonitoringModule,
   ],
+  controllers: [ShippingController, MetricsController],
   providers: [
     ShippingResolver,
     ShippingService,

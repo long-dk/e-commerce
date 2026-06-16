@@ -8,7 +8,7 @@ import { ProductResolver } from './product.resolver';
 import { ProductGateway } from './product.gateway';
 import { Product, ProductSchema } from './product.schema';
 import { getProductsServiceMongoConfig } from '@app/database';
-import { LoggerService, MonitoringModule } from '@app/common';
+import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { ProductController } from './product.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { retry } from 'rxjs';
@@ -53,7 +53,7 @@ import { CacheModule } from '@app/cache';
     CacheModule,
     MonitoringModule,
   ],
-  controllers: [ProductController],
+  controllers: [ProductController, MetricsController],
   providers: [
     ProductService,
     ProductResolver,

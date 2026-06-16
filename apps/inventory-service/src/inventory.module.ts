@@ -10,7 +10,7 @@ import { InventoryService } from './inventory.service';
 import { InventoryGateway } from './inventory.gateway';
 import { InventoryKafkaService } from './inventory.kafka';
 import { getInventoryServiceMongoConfig } from '@app/database';
-import { LoggerService, MonitoringModule } from '@app/common';
+import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { InventoryController } from './inventory.controller';
 import { AuthModule } from '../../../libs/shared/src/auth';
 
@@ -58,7 +58,7 @@ import { AuthModule } from '../../../libs/shared/src/auth';
     ]),
     MonitoringModule,
   ],
-  controllers: [InventoryController],
+  controllers: [InventoryController, MetricsController],
   providers: [
     InventoryResolver,
     InventoryService,

@@ -9,7 +9,7 @@ import { NotificationGateway } from './notification.gateway';
 import { NotificationController } from './notification.controller';
 import { Notification } from './notification.entity';
 import { getNotificationsServicePostgresConfig } from '@app/database';
-import { LoggerService, MonitoringModule } from '@app/common';
+import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { AuthModule } from '../../../libs/shared/src/auth';
 
 @Module({
@@ -49,7 +49,7 @@ import { AuthModule } from '../../../libs/shared/src/auth';
     AuthModule,
     MonitoringModule,
   ],
-  controllers: [NotificationController],
+  controllers: [NotificationController, MetricsController],
   providers: [
     NotificationService, 
     NotificationResolver,

@@ -11,7 +11,7 @@ import { Order, OrderItem } from './order.entity';
 import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { GraphQLJSONObject } from 'graphql-type-json';
 import { getOrdersServicePostgresConfig } from '@app/database';
-import { LoggerService, MonitoringModule } from '@app/common';
+import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { AuthModule } from '../../../libs/shared/src/auth';
 
 @Module({
@@ -60,7 +60,7 @@ import { AuthModule } from '../../../libs/shared/src/auth';
     AuthModule,
     MonitoringModule,
   ],
-  controllers: [OrderController],
+  controllers: [OrderController, MetricsController],
   providers: [
     OrderResolver,
     OrderService,
