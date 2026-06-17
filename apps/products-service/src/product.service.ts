@@ -487,7 +487,7 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
   // Event handlers
   async handleOrderCreated(message: any): Promise<void> {
     try {
-      const event: OrderPlacedEvent = JSON.parse(message.value.toString());
+      const event: OrderPlacedEvent = message;
 
       this.logger.log('Order created event received:', event.orderId);
       // Update stock for each item in the order
@@ -495,13 +495,13 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
         await this.updateStock(item.productId, -item.quantity);
       }
     } catch (error) {
-      this.logger.error('Error handling order placed event:', error);
+      this.logger.error(`Error handling order placed event: ${error}`);
     }
   }
 
   async handleOrderCancelled(message: any): Promise<void> {
     try {
-      const event: OrderCancelledEvent = JSON.parse(message.value.toString());
+      const event: OrderCancelledEvent = message;
 
       // Get order details to restore stock (this would need to be enhanced)
       // For now, we'll assume we need to get the order items from the event or database
@@ -509,7 +509,7 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
       this.logger.log('Order cancelled event received:', event.orderId);
       // TODO: Implement stock restoration logic
     } catch (error) {
-      this.logger.error('Error handling order cancelled event:', error);
+      this.logger.error(`Error handling order cancelled event: ${error}`);
     }
   }
 

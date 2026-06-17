@@ -21,14 +21,14 @@ export interface OrderPlacedEvent {
     quantity: number;
     price: number;
   }>;
-  total: number;
-  createdAt: Date;
+  totalAmount: number;
+  createdAt?: Date;
 }
 
 export interface OrderCancelledEvent {
   orderId: string;
   userId: string;
-  cancelledAt: Date;
+  cancelledAt?: Date;
   reason?: string;
 }
 
@@ -37,7 +37,7 @@ export interface PaymentCompletedEvent {
   paymentId: string;
   orderId: string;
   amount: number;
-  completedAt: Date;
+  completedAt?: Date;
 }
 
 export interface PaymentFailedEvent {
