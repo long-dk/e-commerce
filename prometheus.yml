@@ -24,6 +24,7 @@ scrape_configs:
   - job_name: "api-gateway"
     static_configs:
       - targets: ["api-gateway:4000"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/metrics"
     scrape_interval: 15s
     scrape_timeout: 10s
@@ -37,6 +38,7 @@ scrape_configs:
   - job_name: "auth-service"
     static_configs:
       - targets: ["auth-service:4001"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/metrics"
     scrape_interval: 15s
 
@@ -44,6 +46,7 @@ scrape_configs:
   - job_name: "products-service"
     static_configs:
       - targets: ["products-service:4002"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/metrics"
     scrape_interval: 15s
 
@@ -51,6 +54,7 @@ scrape_configs:
   - job_name: "orders-service"
     static_configs:
       - targets: ["orders-service:4003"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/metrics"
     scrape_interval: 15s
 
@@ -58,6 +62,7 @@ scrape_configs:
   - job_name: "payments-service"
     static_configs:
       - targets: ["payments-service:4004"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/metrics"
     scrape_interval: 15s
 
@@ -65,6 +70,7 @@ scrape_configs:
   - job_name: "inventory-service"
     static_configs:
       - targets: ["inventory-service:4005"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/metrics"
     scrape_interval: 15s
 
@@ -72,6 +78,7 @@ scrape_configs:
   - job_name: "shipping-service"
     static_configs:
       - targets: ["shipping-service:4006"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/metrics"
     scrape_interval: 15s
 
@@ -79,6 +86,7 @@ scrape_configs:
   - job_name: "notifications-service"
     static_configs:
       - targets: ["notifications-service:4007"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/metrics"
     scrape_interval: 15s
 
@@ -86,6 +94,7 @@ scrape_configs:
   - job_name: "elasticsearch"
     static_configs:
       - targets: ["elasticsearch:9200"]
+    fallback_scrape_protocol: PrometheusText0.0.4
     metrics_path: "/_prometheus/metrics"
     scrape_interval: 30s
 
