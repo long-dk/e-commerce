@@ -1,6 +1,7 @@
 import { Field, ObjectType, InputType, ID, Float, Int, registerEnumType } from '@nestjs/graphql';
 import { Inventory, InventoryStatus, StockMovementType as StockMovementTypeEnum } from './inventory.entity';
 import { StockMovement } from './stock-movement.entity';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 registerEnumType(InventoryStatus, {
   name: 'InventoryStatus',
@@ -183,258 +184,351 @@ export class StockMovementRecord {
 @InputType()
 export class CreateInventoryInput {
   @Field()
+  @IsUUID()
   productId: string;
 
   @Field()
+  @IsNotEmpty()
+  @IsString()
   sku: string;
 
   @Field()
+  @IsNotEmpty()
+  @IsString()
   productName: string;
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
   productDetails?: string;
 
   @Field(() => Float, { defaultValue: 0 })
+  @IsNumber()
+  @Min(1)
   quantity: number;
 
   @Field(() => Float, { defaultValue: 0 })
+  @IsNumber()
+  @Min(1)
   reorderPoint: number;
 
   @Field(() => Float, { defaultValue: 0 })
+  @IsNumber()
+  @Min(1)
   maxStock: number;
 
   @Field(() => Float, { defaultValue: 0 })
+  @IsNumber()
+  @Min(1)
   minStock: number;
 
   @Field(() => Float, { defaultValue: 0 })
+  @IsNumber()
+  @Min(1)
   unitCost: number;
 
   @Field({ nullable: true })
+  @IsOptional()
   location?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   warehouse?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   shelf?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   bin?: string;
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
   dimensions?: string;
 
   @Field(() => Float, { defaultValue: 0 })
+  @IsNumber()
+  @Min(1)
   weight: number;
 
   @Field(() => [String], { defaultValue: [] })
+  @IsNotEmpty()
   categories: string[];
 
   @Field(() => [String], { defaultValue: [] })
+  @IsNotEmpty()
   tags: string[];
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
   supplierInfo?: string;
 
   @Field({ defaultValue: true })
+  @IsNotEmpty()
   isActive: boolean;
 
   @Field({ defaultValue: true })
+  @IsNotEmpty()
   trackInventory: boolean;
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
   metadata?: string;
 }
 
 @InputType()
 export class UpdateInventoryInput {
   @Field(() => ID)
+  @IsUUID()
   id: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   productName?: string;
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
   productDetails?: string;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
   reorderPoint?: number;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
   maxStock?: number;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
   minStock?: number;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
   unitCost?: number;
 
   @Field({ nullable: true })
+  @IsOptional()
   location?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   warehouse?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   shelf?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   bin?: string;
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
   dimensions?: string;
 
   @Field(() => Float, { nullable: true })
+  @IsOptional()
   weight?: number;
 
   @Field(() => [String], { nullable: true })
+  @IsOptional()
   categories?: string[];
 
   @Field(() => [String], { nullable: true })
+  @IsOptional()
   tags?: string[];
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
   supplierInfo?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   isActive?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
   trackInventory?: boolean;
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
   metadata?: string;
 }
 
 @InputType()
 export class StockAdjustmentInput {
   @Field(() => ID)
+  @IsUUID()
   inventoryId: string;
 
   @Field(() => Float)
+  @IsNumber()
+  @Min(1)
   quantity: number;
 
   @Field(() => StockMovementTypeEnum)
+  @IsNotEmpty()
   movementType: StockMovementTypeEnum;
 
   @Field({ nullable: true })
+  @IsOptional()
   reason?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   reference?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   referenceType?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   performedBy?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   location?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   notes?: string;
 
   @Field(() => String, { nullable: true })
+  @IsOptional()
   metadata?: string;
 }
 
 @InputType()
 export class ReserveStockInput {
   @Field(() => ID)
+  @IsUUID()
   inventoryId: string;
 
   @Field(() => Float)
+  @IsNumber()
+  @Min(1)
   quantity: number;
 
   @Field({ nullable: true })
+  @IsOptional()
   reference?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   referenceType?: string;
 }
 
 @InputType()
 export class ReleaseStockInput {
   @Field(() => ID)
+  @IsUUID()
   inventoryId: string;
 
   @Field(() => Float)
+  @IsNumber()
+  @Min(1)
   quantity: number;
 
   @Field({ nullable: true })
+  @IsOptional()
   reference?: string;
 }
 
 @InputType()
 export class InventoryFilters {
   @Field({ nullable: true })
+  @IsUUID()
+  @IsOptional()
   productId?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   sku?: string;
 
   @Field(() => [InventoryStatus], { nullable: true })
+  @IsOptional()
   status?: InventoryStatus[];
 
   @Field(() => [String], { nullable: true })
+  @IsOptional()
   categories?: string[];
 
   @Field(() => [String], { nullable: true })
+  @IsOptional()
   tags?: string[];
 
   @Field({ nullable: true })
+  @IsOptional()
   location?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   warehouse?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   isActive?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
   trackInventory?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
   needsReorder?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
   lowStock?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
   outOfStock?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
   dateFrom?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   dateTo?: string;
 }
 
 @InputType()
 export class StockMovementFilters {
   @Field({ nullable: true })
+  @IsOptional()
+  @IsUUID()
   productId?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   inventoryId?: string;
 
   @Field(() => [StockMovementTypeEnum], { nullable: true })
+  @IsOptional()
   movementType?: StockMovementTypeEnum[];
 
   @Field({ nullable: true })
+  @IsOptional()
   reference?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   referenceType?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   performedBy?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   dateFrom?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   dateTo?: string;
 }
 
