@@ -26,7 +26,7 @@ export class PaymentController {
       }]);
       this.logger.log(`Message processed and offset committed successfully`, PaymentController.name);
     } catch (error) {
-      this.logger.error('Error occurred while handling order created event', error, PaymentController.name);
+      this.logger.error(`Error occurred while handling order created event ${error}`, error, PaymentController.name);
     }
   }
 
@@ -46,7 +46,7 @@ export class PaymentController {
       }]);
       this.logger.log(`Message processed and offset committed successfully`, PaymentController.name);
     } catch (error) {
-      this.logger.error('Error occurred while handling order cancelled event', error, PaymentController.name);
+      this.logger.error(`Error occurred while handling order cancelled event ${error}`, error, PaymentController.name);
     }
   }
 

@@ -40,10 +40,10 @@ export class ShippingKafkaService implements OnModuleInit, OnModuleDestroy {
 
       this.shippingGateway.server.emit('shipping.shipped', shipment);
     } catch (error) {
-      this.logger.error('Failed to process order.shipped event', error);
+      this.logger.error(`Failed to process order.shipped event: ${error}`, error, ShippingKafkaService.name);
       this.kafkaClient.emit('shipping.shipped.failed', {
         orderId: orderData.orderId,
-        error: error.message,
+        error: error,
       });
     }
   }
@@ -61,10 +61,10 @@ export class ShippingKafkaService implements OnModuleInit, OnModuleDestroy {
 
       this.shippingGateway.server.emit('shipping.delivered', shipment);
     } catch (error) {
-      this.logger.error('Failed to process order.delivered event', error);
+      this.logger.error(`Failed to process order.delivered event: ${error}`, error, ShippingKafkaService.name);
       this.kafkaClient.emit('shipping.delivered.failed', {
         orderId: orderData.orderId,
-        error: error.message,
+        error,
       });
     }
   }
@@ -84,10 +84,10 @@ export class ShippingKafkaService implements OnModuleInit, OnModuleDestroy {
 
       this.shippingGateway.server.emit('shipping.cancelled', shipment);
     } catch (error) {
-      this.logger.error('Failed to process order.cancelled event', error);
+      this.logger.error(`Failed to process order.cancelled event: ${error}`, error, ShippingKafkaService.name);
       this.kafkaClient.emit('shipping.cancelled.failed', {
         orderId: orderData.orderId,
-        error: error.message,
+        error,
       });
     }
   }

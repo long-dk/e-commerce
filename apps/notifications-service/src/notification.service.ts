@@ -147,7 +147,7 @@ export class NotificationService {
         payload: JSON.stringify(payload),
       });
     } catch (error) {
-      this.logger.error(`Failed to handle event ${eventType}`, error as any);
+      this.logger.error(`Failed to handle event ${eventType}: ${error}`);
     }
   }
 }

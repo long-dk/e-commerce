@@ -54,7 +54,7 @@ export class ProxyService {
 
       return response.data;
     } catch (error) {
-      this.logger.error(`Proxy error for ${service}:${path}`, error);
+      this.logger.error(`Proxy error for ${service}:${path} ${error}`);
 
       if (error instanceof AxiosError) {
         const status = error.response?.status || HttpStatus.BAD_GATEWAY;

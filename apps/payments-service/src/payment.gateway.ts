@@ -53,7 +53,7 @@ export class PaymentGateway implements OnGatewayConnection, OnGatewayDisconnect 
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      this.logger.error(`Connection error: ${error.message}`);
+      this.logger.error(`Connection error: ${error}`);
       client.disconnect();
     }
   }

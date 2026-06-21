@@ -26,7 +26,7 @@ export class NotificationController {
       }]);
       this.logger.log(`Successfully processed order.created event and committed offset ${offset}`);
     } catch (error) {
-      this.logger.error('Error processing order.created event', error);
+      this.logger.error(`Error processing order.created event ${error}`);
       // Depending on the error, you might want to implement retry logic here or let the framework handle it based on the retry configuration.
     }
   }
@@ -47,7 +47,7 @@ export class NotificationController {
       }]);
       this.logger.log(`Successfully processed payment.processed event and committed offset ${offset}`);
     } catch (error) {
-      this.logger.error('Error processing payment.processed event', error);
+      this.logger.error(`Error processing payment.processed event ${error}`);
       // Depending on the error, you might want to implement retry logic here or let the framework handle it based on the retry configuration.
     }
   }
@@ -68,7 +68,7 @@ export class NotificationController {
       }]);
       this.logger.log(`Successfully processed shipping.shipped event and committed offset ${offset}`);
     } catch (error) {
-      this.logger.error('Error processing shipping.shipped event', error);
+      this.logger.error(`Error processing shipping.shipped event ${error}`);
       // Depending on the error, you might want to implement retry logic here or let the framework handle it based on the retry configuration.
     }
   }
@@ -89,7 +89,7 @@ export class NotificationController {
       }]);
       this.logger.log(`Successfully processed shipping.delivered event and committed offset ${offset}`);
     } catch (error) {
-      this.logger.error('Error processing shipping.delivered event', error);
+      this.logger.error(`Error processing shipping.delivered event ${error}`);
       // Depending on the error, you might want to implement retry logic here or let the framework handle it based on the retry configuration.
     }
   }
@@ -110,7 +110,7 @@ export class NotificationController {
       }]);
       this.logger.log(`Successfully processed inventory.low event and committed offset ${offset}`);
     } catch (error) {
-      this.logger.error('Error processing inventory.low event', error);
+      this.logger.error(`Error processing inventory.low event ${error}`);
       // Depending on the error, you might want to implement retry logic here or let the framework handle it based on the retry configuration.
     }
   }

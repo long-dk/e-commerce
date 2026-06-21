@@ -40,7 +40,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
       await this.userService.sendVerificationEmail(userDto.id);
     } catch (error) {
       // Log error but don't fail registration
-      this.logger.error('Failed to send verification email:', error);
+      this.logger.error(`Failed to send verification email: ${error}`);
     }
 
     // Generate tokens
@@ -192,7 +192,7 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
       });
       this.logger.log('Published user-registered event');
     } catch (error) {
-      this.logger.error('Failed to publish user-registered event', error);
+      this.logger.error(`Failed to publish user-registered event: ${error}`);
       // Don't fail registration if Kafka is down
     }
   }

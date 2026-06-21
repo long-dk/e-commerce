@@ -25,7 +25,7 @@ export class CacheService {
       }
       return value;
     } catch (error) {
-      this.logger.error(`Cache get error for key ${key}:`, error);
+      this.logger.error(`Cache get error for key ${key}: ${error}`);
       return undefined;
     }
   }
@@ -40,7 +40,7 @@ export class CacheService {
         `Cache SET for key: ${key}${ttl ? ` with TTL: ${ttl}ms` : ''}`,
       );
     } catch (error) {
-      this.logger.error(`Cache set error for key ${key}:`, error);
+      this.logger.error(`Cache set error for key ${key}: ${error}`);
     }
   }
 
@@ -57,10 +57,7 @@ export class CacheService {
         this.logger.debug(`Cache DEL for key: ${key}`);
       }
     } catch (error) {
-      this.logger.error(
-        `Cache del error for key ${key}:`,
-        error,
-      );
+      this.logger.error(`Cache del error for key ${key}: ${error}`);
     }
   }
 
@@ -72,7 +69,7 @@ export class CacheService {
       await this.cacheManager.reset();
       this.logger.debug('Cache CLEARED');
     } catch (error) {
-      this.logger.error('Cache clear error:', error);
+      this.logger.error(`Cache clear error: ${error}`);
     }
   }
 
@@ -95,7 +92,7 @@ export class CacheService {
       await this.set(key, value, ttl);
       return value;
     } catch (error) {
-      this.logger.error(`Cache getOrSet error for key ${key}:`, error);
+      this.logger.error(`Cache getOrSet error for key ${key}: ${error}`);
       // Fallback to factory computation if cache fails
       return factory();
     }
@@ -122,7 +119,7 @@ export class CacheService {
       // Placeholder for pattern-based deletion
       // In production, use getCacheManager() and execute custom Redis commands
     } catch (error) {
-      this.logger.error(`Cache deletePattern error for pattern ${pattern}:`, error);
+      this.logger.error(`Cache deletePattern error for pattern ${pattern}: ${error}`);
     }
   }
 
@@ -138,7 +135,7 @@ export class CacheService {
       };
       return stats;
     } catch (error) {
-      this.logger.error('Cache stats error:', error);
+      this.logger.error(`Cache stats error: ${error}`);
       return null;
     }
   }

@@ -53,7 +53,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             });
           }
         } catch (error) {
-          this.logger.error(`Failed to reserve stock for product ${item.productId}:`, error);
+          this.logger.error(`Failed to reserve stock for product ${item.productId}: ${error}`, error);
           reservationResults.push({
             productId: item.productId,
             quantity: item.quantity,
@@ -77,7 +77,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
       });
 
     } catch (error) {
-      this.logger.error('Failed to process order created event:', error);
+      this.logger.error(`Failed to process order created event: ${error}`, error);
 
       // Publish failure event
       this.kafkaClient.emit('inventory.reservation.failed', {
@@ -112,7 +112,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             });
           }
         } catch (error) {
-          this.logger.error(`Failed to release stock for product ${item.productId}:`, error);
+          this.logger.error(`Failed to release stock for product ${item.productId}: ${error}`, error);
           releaseResults.push({
             productId: item.productId,
             quantity: item.quantity,
@@ -136,7 +136,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
       });
 
     } catch (error) {
-      this.logger.error('Failed to process order cancelled event:', error);
+      this.logger.error(`Failed to process order cancelled event: ${error}`, error);
     }
   }
 
@@ -176,7 +176,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             });
           }
         } catch (error) {
-          this.logger.error(`Failed to process shipment for product ${item.productId}:`, error);
+          this.logger.error(`Failed to process shipment for product ${item.productId}: ${error}`, error);
           shipmentResults.push({
             productId: item.productId,
             quantity: item.quantity,
@@ -200,7 +200,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
       });
 
     } catch (error) {
-      this.logger.error('Failed to process order shipped event:', error);
+      this.logger.error(`Failed to process order shipped event: ${error}`, error);
     }
   }
 
@@ -246,7 +246,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             });
           }
         } catch (error) {
-          this.logger.error(`Failed to restore stock for product ${item.productId}:`, error);
+          this.logger.error(`Failed to restore stock for product ${item.productId}: ${error}`, error);
           refundResults.push({
             productId: item.productId,
             quantity: item.quantity,
@@ -272,7 +272,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
       });
 
     } catch (error) {
-      this.logger.error('Failed to process payment refunded event:', error);
+      this.logger.error(`Failed to process payment refunded event: ${error}`, error);
     }
   }
 
@@ -282,7 +282,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
       const result = await this.inventoryService.checkBulkStock(productIds, quantities);
       return result;
     } catch (error) {
-      this.logger.error('Failed to check inventory availability:', error);
+      this.logger.error(`Failed to check inventory availability: ${error}`, error);
       throw error;
     }
   }
@@ -331,7 +331,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
         allReserved: reservationResults.every(r => r.success),
       };
     } catch (error) {
-      this.logger.error('Failed to reserve inventory for order:', error);
+      this.logger.error(`Failed to reserve inventory for order: ${error}`, error);
       throw error;
     }
   }
@@ -372,7 +372,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
         allReleased: releaseResults.every(r => r.success),
       };
     } catch (error) {
-      this.logger.error('Failed to release inventory reservation:', error);
+      this.logger.error(`Failed to release inventory reservation: ${error}`, error);
       throw error;
     }
   }

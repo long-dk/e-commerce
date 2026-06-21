@@ -27,7 +27,7 @@ export class ProductController {
       }]);
       this.logger.log(`Message processed and offset committed successfully`, ProductController.name);
     } catch (error) {
-      this.logger.error(`Error occurred while handling order created event`, error, ProductController.name);
+      this.logger.error(`Error occurred while handling order created event ${error}`, error, ProductController.name);
     }
   }
 
@@ -47,7 +47,7 @@ export class ProductController {
       }]);
       this.logger.log(`Message processed and offset committed successfully`, ProductController.name);
     } catch (error) {
-      this.logger.error(`Error occurred while handling order cancelled event`, error, ProductController.name);
+      this.logger.error(`Error occurred while handling order cancelled event ${error}`, error, ProductController.name);
     }
   }
 

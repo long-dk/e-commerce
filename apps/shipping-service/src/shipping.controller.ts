@@ -23,7 +23,7 @@ export class ShippingController {
       await this.shippingKafkaService.handleOrderShipped(data);
       await context.getConsumer().commitOffsets([{ topic, partition, offset: (Number(offset) + 1).toString() }]);
     } catch (error) {
-      this.logger.error('Failed to handle order.shipped event', error, ShippingController.name);
+      this.logger.error(`Failed to handle order.shipped event: ${error}`, error, ShippingController.name);
     }
   }
 
@@ -38,7 +38,7 @@ export class ShippingController {
       await this.shippingKafkaService.handleOrderDelivered(data);
       await context.getConsumer().commitOffsets([{ topic, partition, offset: (Number(offset) + 1).toString() }]);
     } catch (error) {
-      this.logger.error('Failed to handle order.delivered event', error, ShippingController.name);
+      this.logger.error(`Failed to handle order.delivered event: ${error}`, error, ShippingController.name);
     }
   }
   
@@ -53,7 +53,7 @@ export class ShippingController {
       await this.shippingKafkaService.handleOrderCancelled(data);
       await context.getConsumer().commitOffsets([{ topic, partition, offset: (Number(offset) + 1).toString() }]);
     } catch (error) {
-      this.logger.error('Failed to handle order.cancelled event', error, ShippingController.name);
+      this.logger.error(`Failed to handle order.cancelled event: ${error}`, error, ShippingController.name);
     }
   }
 
