@@ -88,11 +88,11 @@
       },
       "targets": [
         {
-          "expr": "rate(http_requests_total[5m])",
+          "expr": "sum by (method, status_code) (rate(http_requests_total[1m]))",
           "refId": "A"
         }
       ],
-      "title": "API Request Rate (5m)",
+      "title": "API RPS (1m)",
       "type": "timeseries"
     },
     {
