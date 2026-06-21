@@ -227,7 +227,19 @@ export class PaymentService implements OnModuleInit, OnModuleDestroy {
 
     this.logger.log(`Payment processing started: ${paymentId}`);
 
-    return this.toPaymentResponse(updatedPayment);
+    payment.status = PaymentStatus.COMPLETED; // This would be based on actual processing result in a real implementation
+    const finalPayment = await this.paymentRepository.save(payment);
+    this.kafkaClient.emit('payment.processed', {
+      paymentId: finalPayment.id,
+      orderId: finalPayment.orderId,
+      userId: finalPayment.userId,
+      status: 'success', // or 'failed' based on actual processing result
+      transactionId: finalPayment.gatewayTransactionId,
+    });
+    
+    this.logger.log(`Payment processing completed: ${paymentId}, status: ${finalPayment.status}`);
+    
+    return this.toPaymentResponse(finalPayment);
   }
 
   async completePayment(paymentId: string, transactionId?: string, userId?: string): Promise<PaymentType> {
@@ -386,6 +398,13 @@ export class PaymentService implements OnModuleInit, OnModuleDestroy {
   async handleOrderCreated(data: any) {
     this.logger.log(`Order created event received: ${data.orderId}`);
     // Could automatically create payment record or send notification
+    const paymentInput: CreatePaymentDto = {
+      orderId: data.orderId,
+      amount: data.totalAmount,
+      currency: data.currency || Currency.USD,
+      paymentMethod: data.paymentMethod || PaymentMethod.CREDIT_CARD,
+    };
+    await this.create(paymentInput, data.userId);
   }
 
   async handleOrderCancelled(data: any) {

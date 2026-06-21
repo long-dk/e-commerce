@@ -123,6 +123,18 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  emitOrderProcessing(order: Order) {
+    this.server.to(`user:${order.userId}`).emit('orderProcessing', {
+      order,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.server.to(`order:${order.id}`).emit('orderProcessing', {
+      order,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   emitOrderCancelled(order: Order) {
     this.server.to(`user:${order.userId}`).emit('orderCancelled', {
       order,

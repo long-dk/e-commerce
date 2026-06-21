@@ -220,6 +220,23 @@ export class OrderService implements OnModuleInit, OnModuleDestroy {
     return updatedOrder;
   }
 
+  async process(id: string, userId?: string): Promise<OrderType> {
+    const order = await this.findOne(id, userId);
+
+    if (order.status !== OrderStatus.CONFIRMED) {
+      throw new BadRequestException('Order is not in confirmed status');
+    }
+
+    await this.orderRepository.update(id, { status: OrderStatus.PROCESSING });
+
+    const updatedOrder = await this.findOne(id, userId);
+
+    // Emit real-time event
+    this.orderGateway.emitOrderProcessing(updatedOrder);
+
+    return updatedOrder;
+  }
+
   async ship(id: string, shippingData: { trackingNumber?: string; carrier?: string }, userId: string): Promise<OrderType> {
     const order = await this.findOne(id, userId);
 
@@ -240,6 +257,10 @@ export class OrderService implements OnModuleInit, OnModuleDestroy {
     // Publish order shipped event
     this.kafkaClient.emit('order.shipped', {
       orderId: id,
+      items: order.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
       userId,
       trackingNumber: shippingData.trackingNumber,
       carrier: shippingData.carrier,
@@ -361,26 +382,37 @@ export class OrderService implements OnModuleInit, OnModuleDestroy {
   }
 
   // Kafka message handlers
+  async handleInventoryReservationCompleted(data: any) {
+    // Handle inventory reservation completion logic if needed
+    this.logger.log('Inventory reservation completed for order:', data.orderId);
+  }
+
+  async handleInventoryReservationFailed(data: any) {
+    // Handle inventory reservation failure logic if needed
+    this.logger.log('Inventory reservation failed for order:', data.orderId);
+  }
+
   async handlePaymentProcessed(data: any) {
     const { orderId, transactionId, status } = data;
 
     if (status === 'success') {
-      await this.updatePaymentStatus(orderId, PaymentStatus.COMPLETED, transactionId);
+      await this.updatePaymentStatus(orderId, PaymentStatus.COMPLETED);
       // Auto-confirm order when payment is successful
       await this.confirm(orderId); // Skip user check for system operations
     } else {
-      await this.updatePaymentStatus(orderId, PaymentStatus.FAILED, transactionId);
+      await this.updatePaymentStatus(orderId, PaymentStatus.FAILED);
     }
+  }
+
+  async handlePaymentCompleted(data: any) {
+    const { orderId, transactionId } = data;
+    await this.updatePaymentStatus(orderId, PaymentStatus.COMPLETED, transactionId);
   }
 
   async handlePaymentFailed(data: any) {
     // Handle payment failure
     this.logger.log('Payment failed for order:', data.orderId);
-  }
-
-  async handleInventoryReserved(data: any) {
-    // Handle inventory reservation confirmation
-    this.logger.log('Inventory reserved for order:', data.orderId);
+    await this.updatePaymentStatus(data.orderId, PaymentStatus.FAILED);
   }
 
   async handleShippingCreated(data: any) {

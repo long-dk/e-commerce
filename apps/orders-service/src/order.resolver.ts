@@ -76,6 +76,15 @@ export class OrderResolver {
 
   @Mutation(() => Order)
   @UseGuards(JwtAuthGuard)
+  async processOrder(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: any,
+  ): Promise<Order> {
+    return this.orderService.process(id, user.userId);
+  }
+
+  @Mutation(() => Order)
+  @UseGuards(JwtAuthGuard)
   async shipOrder(
     @Args('id', { type: () => ID }) id: string,
     @Args('trackingNumber', { nullable: true }) trackingNumber: string,
