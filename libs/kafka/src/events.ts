@@ -53,7 +53,6 @@ export interface ProductCreatedEvent {
   name: string;
   category: string;
   price: number;
-  stock: number;
   createdAt: Date;
 }
 
@@ -62,7 +61,6 @@ export interface ProductUpdatedEvent {
   name: string;
   category: string;
   price: number;
-  stock: number;
   updatedAt: Date;
 }
 
@@ -71,29 +69,12 @@ export interface ProductDeletedEvent {
   deletedAt: Date;
 }
 
-export interface StockUpdatedEvent {
-  productId: string;
-  previousStock: number;
-  newStock: number;
-  reason: 'sale' | 'restock' | 'adjustment' | 'order_cancelled';
-  updatedAt: Date;
-}
-
 // Inventory events
 export interface InventoryUpdatedEvent {
   productId: string;
   quantity: number;
   reserved: number;
   updatedAt: Date;
-}
-
-export interface StockReservedEvent {
-  orderId: string;
-  items: Array<{
-    productId: string;
-    quantity: number;
-  }>;
-  reservedAt: Date;
 }
 
 // Shipping events

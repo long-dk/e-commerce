@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -11,15 +11,10 @@ import {
   ProductCreatedEvent,
   ProductUpdatedEvent,
   ProductDeletedEvent,
-  StockUpdatedEvent,
-  OrderPlacedEvent,
-  OrderCancelledEvent,
 } from '@app/kafka';
 import { LoggerService } from '@app/common';
 import { 
   CacheService,
-  Cacheable,
-  CacheInvalidate,
   CACHE_TTL,
   CACHE_KEYS, } from '@app/cache';
 import { ProductGateway } from './product.gateway';
@@ -86,7 +81,6 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
       minRating,
       sortBy = 'createdAt',
       sortOrder = 'desc',
-      inStock,
       isFeatured,
     } = query;
 
@@ -122,11 +116,6 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
     // Rating filter
     if (minRating !== undefined) {
       filter.rating = { $gte: minRating };
-    }
-
-    // Stock filter
-    if (inStock === true) {
-      filter.stock = { $gt: 0 };
     }
 
     // Featured filter
@@ -246,50 +235,6 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
       'products:brands:all',
       'products:categories:all',
     ]);
-  }
-
-  async updateStock(id: string, quantity: number): Promise<ProductResponseDto> {
-    const product = await this.productModel.findById(id).exec();
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    const previousStock = product.stock;
-    if (previousStock + quantity < 0) {
-      throw new BadRequestException('Insufficient stock');
-    }
-
-    product.stock += quantity;
-    await product.save();
-
-    // Publish Kafka event
-    await this.publishStockUpdatedEvent(product, previousStock, quantity > 0 ? 'restock' : 'sale');
-
-    // Emit real-time WebSocket event
-    this.productGateway.emitStockUpdated(
-      product._id.toString(),
-      previousStock,
-      product.stock,
-      quantity > 0 ? 'restock' : 'sale'
-    );
-
-    // Check for low stock alert
-    if (product.minStockLevel && product.stock <= product.minStockLevel) {
-      this.productGateway.emitLowStockAlert(
-        product._id.toString(),
-        product.name,
-        product.stock,
-        product.minStockLevel
-      );
-    }
-
-    // Invalidate product cache since stock changed
-    await this.cacheService.del([
-      CACHE_KEYS.PRODUCT_BY_ID(id),
-      CACHE_KEYS.PRODUCTS_ALL,
-    ]);
-
-    return this.toProductResponseDto(product);
   }
 
   async getCategories(): Promise<string[]> {
@@ -421,7 +366,6 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
       name: product.name,
       category: product.category,
       price: product.price,
-      stock: product.stock,
       createdAt: product.createdAt,
     };
 
@@ -438,7 +382,6 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
       name: product.name,
       category: product.category,
       price: product.price,
-      stock: product.stock,
       updatedAt: product.updatedAt,
     };
 
@@ -462,55 +405,6 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private async publishStockUpdatedEvent(
-    product: ProductDocument,
-    previousStock: number,
-    reason: 'sale' | 'restock' | 'adjustment' | 'order_cancelled',
-  ): Promise<void> {
-    const event: StockUpdatedEvent = {
-      productId: product._id.toString(),
-      previousStock,
-      newStock: product.stock,
-      reason,
-      updatedAt: new Date(),
-    };
-
-    this.clientKafka.emit('stock.updated', {
-      key: product._id.toString(),
-      value: JSON.stringify(event),
-      headers: { eventType: 'StockUpdated' },
-    });
-  }
-
-  // Event handlers
-  async handleOrderCreated(message: any): Promise<void> {
-    try {
-      const event: OrderPlacedEvent = message;
-
-      this.logger.log('Order created event received:', event.orderId);
-      // Update stock for each item in the order
-      for (const item of event.items) {
-        await this.updateStock(item.productId, -item.quantity);
-      }
-    } catch (error) {
-      this.logger.error(`Error handling order placed event: ${error}`);
-    }
-  }
-
-  async handleOrderCancelled(message: any): Promise<void> {
-    try {
-      const event: OrderCancelledEvent = message;
-
-      // Get order details to restore stock (this would need to be enhanced)
-      // For now, we'll assume we need to get the order items from the event or database
-      // This is a simplified implementation - in production, you'd want to store order items
-      this.logger.log('Order cancelled event received:', event.orderId);
-      // TODO: Implement stock restoration logic
-    } catch (error) {
-      this.logger.error(`Error handling order cancelled event: ${error}`);
-    }
-  }
-
   private toProductResponseDto(product: ProductDocument): ProductResponseDto {
     return {
       id: product._id.toString(),
@@ -521,8 +415,6 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
       category: product.category,
       subcategory: product.subcategory,
       brand: product.brand,
-      stock: product.stock,
-      minStockLevel: product.minStockLevel,
       images: product.images || [],
       thumbnail: product.thumbnail,
       tags: product.tags || [],
@@ -547,9 +439,5 @@ export class ProductService implements OnModuleInit, OnModuleDestroy {
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
-  }
-
-  getHello(): string {
-    return 'Hello World!';
   }
 }

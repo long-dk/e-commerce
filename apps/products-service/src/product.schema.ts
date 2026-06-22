@@ -27,12 +27,6 @@ export class Product {
   @Prop({ required: true, index: true })
   brand: string;
 
-  @Prop({ required: true, min: 0 })
-  stock: number;
-
-  @Prop({ default: 0, min: 0 })
-  minStockLevel?: number;
-
   @Prop([String])
   images: string[];
 

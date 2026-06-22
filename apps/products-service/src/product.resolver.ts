@@ -2,7 +2,6 @@ import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { ProductService } from './product.service';
 import {
   ProductGQL,
-  ProductResponseGQL,
   ProductsResponseGQL,
   CreateProductInput,
   UpdateProductInput,
@@ -39,14 +38,6 @@ export class ProductResolver {
     @Args('input') updateProductInput: UpdateProductInput,
   ) {
     return this.productService.update(id, updateProductInput);
-  }
-
-  @Mutation(() => ProductGQL)
-  async updateProductStock(
-    @Args('id') id: string,
-    @Args('quantity') quantity: number,
-  ) {
-    return this.productService.updateStock(id, quantity);
   }
 
   @Mutation(() => Boolean)

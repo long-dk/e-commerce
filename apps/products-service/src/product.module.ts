@@ -11,7 +11,6 @@ import { getProductsServiceMongoConfig } from '@app/database';
 import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { ProductController } from './product.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { retry } from 'rxjs';
 import { CacheModule } from '@app/cache';
 @Module({
   imports: [

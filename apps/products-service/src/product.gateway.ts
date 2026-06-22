@@ -197,37 +197,4 @@ export class ProductGateway implements OnGatewayConnection, OnGatewayDisconnect 
       timestamp: new Date().toISOString(),
     });
   }
-
-  emitStockUpdated(productId: string, previousStock: number, newStock: number, reason: string) {
-    this.logger.log(`Emitting stock updated: ${productId} (${previousStock} -> ${newStock})`);
-
-    const stockUpdate = {
-      productId,
-      previousStock,
-      newStock,
-      reason,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Emit to all clients
-    this.server.emit('stockUpdated', stockUpdate);
-
-    // Emit to product-specific room
-    this.server.to(`product:${productId}`).emit('productStockUpdate', stockUpdate);
-  }
-
-  emitLowStockAlert(productId: string, productName: string, currentStock: number, minStockLevel: number) {
-    this.logger.warn(`Low stock alert: ${productName} (${currentStock}/${minStockLevel})`);
-
-    const alert = {
-      productId,
-      productName,
-      currentStock,
-      minStockLevel,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Emit to all clients
-    this.server.emit('lowStockAlert', alert);
-  }
 }

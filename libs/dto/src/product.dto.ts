@@ -2,7 +2,6 @@ import {
   IsString,
   IsNumber,
   IsOptional,
-  IsUrl,
   MinLength,
   IsArray,
   IsBoolean,
@@ -41,15 +40,6 @@ export class CreateProductDto {
   @IsString()
   @MinLength(2)
   brand: string;
-
-  @IsNumber()
-  @Min(0)
-  stock: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  minStockLevel?: number;
 
   @IsArray()
   @IsString({ each: true })
@@ -153,16 +143,6 @@ export class UpdateProductDto {
   brand?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  stock?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  minStockLevel?: number;
-
-  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   images?: string[];
@@ -239,8 +219,6 @@ export class ProductResponseDto {
   category: string;
   subcategory?: string;
   brand: string;
-  stock: number;
-  minStockLevel?: number;
   images: string[];
   thumbnail?: string;
   tags: string[];
@@ -309,10 +287,6 @@ export class SearchProductsDto {
   @Min(1)
   @Max(100)
   limit?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  inStock?: boolean;
 
   @IsOptional()
   @IsBoolean()

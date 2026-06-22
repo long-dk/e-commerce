@@ -39,12 +39,6 @@ export class ProductGQL {
   @Field()
   brand: string;
 
-  @Field(() => Int)
-  stock: number;
-
-  @Field(() => Int, { nullable: true })
-  minStockLevel?: number;
-
   @Field(() => [String])
   images: string[];
 
@@ -157,12 +151,6 @@ export class CreateProductInput {
   @Field()
   brand: string;
 
-  @Field(() => Int)
-  stock: number;
-
-  @Field(() => Int, { nullable: true })
-  minStockLevel?: number;
-
   @Field(() => [String])
   images: string[];
 
@@ -231,12 +219,6 @@ export class UpdateProductInput {
 
   @Field({ nullable: true })
   brand?: string;
-
-  @Field(() => Int, { nullable: true })
-  stock?: number;
-
-  @Field(() => Int, { nullable: true })
-  minStockLevel?: number;
 
   @Field(() => [String], { nullable: true })
   images?: string[];
@@ -315,9 +297,6 @@ export class SearchProductsInput {
 
   @Field(() => Int, { nullable: true })
   limit?: number;
-
-  @Field({ nullable: true })
-  inStock?: boolean;
 
   @Field({ nullable: true })
   isFeatured?: boolean;
