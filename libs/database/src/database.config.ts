@@ -36,15 +36,6 @@ const getMongoBaseConfig = (databaseName: string) => {
 };
 
 /**
- * Backward compatible generic configs
- */
-export const getPostgresConfig = (): TypeOrmModuleOptions =>
-  getPostgresBaseConfig(process.env.DATABASE_NAME || 'ecommerce_db');
-
-export const getMongoConfig = () =>
-  getMongoBaseConfig(process.env.MONGODB_DATABASE || 'ecommerce_db');
-
-/**
  * Auth Service - PostgreSQL
  * Stores: Users, Refresh Tokens, OAuth Credentials
  */
