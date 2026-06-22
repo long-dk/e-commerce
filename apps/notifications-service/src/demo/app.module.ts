@@ -23,10 +23,6 @@ import { DemoController } from './demo.controller';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
-      subscriptions: {
-        'graphql-ws': true,
-        'subscriptions-transport-ws': true,
-      },
       playground: true,
       introspection: true,
     }),

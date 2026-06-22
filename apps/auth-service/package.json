@@ -25,17 +25,17 @@
     "@nestjs/graphql": "^12.0.6",
     "@nestjs/jwt": "^10.1.0",
     "@nestjs/microservices": "^10.2.10",
+    "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.2.10",
     "@nestjs/platform-socket.io": "^10.2.10",
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.2.10",
-    "@nestjs/passport": "^10.0.3",
     "apollo-server-express": "^3.12.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "graphql": "^16.8.1",
-    "graphql-subscriptions": "^2.0.0",
+    "graphql-ws": "^5.14.0",
     "jsonwebtoken": "^9.0.0",
     "kafkajs": "^2.2.4",
     "passport": "^0.7.0",
@@ -44,9 +44,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.2",
-    "typeorm": "^0.3.19",
-    "graphql-ws": "^5.14.0",
-    "subscriptions-transport-ws": "^0.11.0"
+    "typeorm": "^0.3.19"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.1.18",
@@ -74,11 +72,19 @@
     "typescript": "^5.2.2"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
-    "transform": { "^.+\\.(t|j)s$": "ts-jest" },
-    "collectCoverageFrom": ["**/*.(t|j)s"],
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

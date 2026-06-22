@@ -53,6 +53,7 @@ export class ShippingKafkaService implements OnModuleInit, OnModuleDestroy {
       const shipment = await this.shippingService.markAsDelivered(orderData.orderId);
 
       this.kafkaClient.emit('shipping.delivered', {
+        userId: orderData.userId,
         orderId: orderData.orderId,
         shipmentId: shipment.id,
         status: shipment.status,

@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { PubSub } from 'graphql-subscriptions';
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -31,7 +30,6 @@ import { ClientKafka } from '@nestjs/microservices';
 export class ProductService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectModel('Product') private productModel: Model<any>,
-    @Inject('PUB_SUB') private readonly pubSub: PubSub,
     @Inject('KAFKA_CLIENT') private readonly clientKafka: ClientKafka,
     @Inject(forwardRef(() => ProductGateway))
     private readonly productGateway: ProductGateway,

@@ -59,10 +59,6 @@ import { CacheModule } from '@app/cache';
     ProductResolver,
     ProductGateway,
     LoggerService,
-    {
-      provide: 'PUB_SUB',
-      useValue: new (require('graphql-subscriptions').PubSub)(),
-    },
   ],
 })
 export class ProductModule {}
