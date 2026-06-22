@@ -11,7 +11,7 @@ services:
     ports:
       - "2181:2181"
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
       - zookeeper-logs:/var/lib/zookeeper/log
@@ -39,7 +39,7 @@ services:
     ports:
       - "9092:9092"
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
       - kafka-data:/var/lib/kafka/data
 
@@ -63,7 +63,7 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -89,7 +89,7 @@ services:
     ports:
       - "27017:27017"
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
       - mongodb-data:/data/db
     healthcheck:
@@ -113,7 +113,7 @@ services:
     ports:
       - "${REDIS_PORT:-6379}:6379"
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password}
@@ -140,7 +140,7 @@ services:
       - "9200:9200"
       - "9300:9300"
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     healthcheck:
@@ -170,9 +170,9 @@ services:
       - "5001:5001"
       - "9600:9600"
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./monitoring/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     command: logstash -f /usr/share/logstash/pipeline/logstash.conf
     healthcheck:
       test: curl -s http://localhost:9600 >/dev/null || exit 1
@@ -199,7 +199,7 @@ services:
     ports:
       - "5601:5601"
     networks:
-      - ecommerce-network
+      - zk-ecom
     healthcheck:
       test: curl -s http://localhost:5601/api/status >/dev/null || exit 1
       interval: 10s
@@ -219,10 +219,10 @@ services:
       - KIBANA_HOST=kibana:5601
     volumes:
       - filebeat-data:/usr/share/filebeat/data
-      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./monitoring/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
       - app-logs:/usr/share/filebeat/logs:ro
     networks:
-      - ecommerce-network
+      - zk-ecom
 
   # ==================== MONITORING & OBSERVABILITY ====================
 
@@ -235,10 +235,10 @@ services:
     env_file:
       - .env
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./alerts.yml:/etc/prometheus/alerts.yml
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -264,7 +264,7 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - ecommerce-network
+      - zk-ecom
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
@@ -272,9 +272,9 @@ services:
       GF_USERS_ALLOW_SIGN_UP: false
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana-dashboards/:/etc/grafana/provisioning/dashboards/
-      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
-      - ./grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./monitoring/grafana/dashboards/:/etc/grafana/provisioning/dashboards/
+      - ./monitoring/grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./monitoring/grafana/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 10s
@@ -294,7 +294,7 @@ services:
       - "4318:4318"    # OTLP HTTP receiver
       - "6831:6831/udp" # Jaeger Thrift compact receiver
     networks:
-      - ecommerce-network
+      - zk-ecom
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     healthcheck:
@@ -307,7 +307,7 @@ services:
   # Prometheus AlertManager - Alert routing and management
   alertmanager:
     build:
-      context: ./alert-manager
+      context: ./monitoring/alert-manager
       dockerfile: Dockerfile
       args:
         SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
@@ -324,7 +324,7 @@ services:
     ports:
       - "9093:9093"
     networks:
-      - ecommerce-network
+      - zk-ecom
     volumes:
       - alertmanager-data:/alertmanager
     # command:
@@ -364,7 +364,7 @@ services:
     volumes:
       - app-logs:${LOGS_DIR:-/app/logs}
     networks:
-      - ecommerce-network
+      - zk-ecom
     command: node dist/apps/api-gateway/main
     restart: unless-stopped
 
@@ -389,14 +389,13 @@ services:
       DATABASE_PORT: ${DATABASE_PORT}
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_NAME: ${DATABASE_NAME}
       KAFKA_BROKERS: kafka:29092
     ports:
       - "4001:4001"
     volumes:
       - app-logs:${LOGS_DIR:-/app/logs}
     networks:
-      - ecommerce-network
+      - zk-ecom
     command: node dist/apps/auth-service/main
     restart: unless-stopped
 
@@ -425,7 +424,7 @@ services:
     volumes:
       - app-logs:${LOGS_DIR:-/app/logs}
     networks:
-      - ecommerce-network
+      - zk-ecom
     command: node dist/apps/products-service/main
     restart: unless-stopped
 
@@ -450,14 +449,13 @@ services:
       DATABASE_PORT: ${DATABASE_PORT}
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_NAME: ${DATABASE_NAME}
       KAFKA_BROKERS: kafka:29092
     ports:
       - "4003:4003"
     volumes:
       - app-logs:${LOGS_DIR:-/app/logs}
     networks:
-      - ecommerce-network
+      - zk-ecom
     command: node dist/apps/orders-service/main
     restart: unless-stopped
 
@@ -482,14 +480,13 @@ services:
       DATABASE_PORT: ${DATABASE_PORT}
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_NAME: ${DATABASE_NAME}
       KAFKA_BROKERS: kafka:29092
     ports:
       - "4004:4004"
     volumes:
       - app-logs:${LOGS_DIR:-/app/logs}
     networks:
-      - ecommerce-network
+      - zk-ecom
     command: node dist/apps/payments-service/main
     restart: unless-stopped
 
@@ -518,7 +515,7 @@ services:
     volumes:
       - app-logs:${LOGS_DIR:-/app/logs}
     networks:
-      - ecommerce-network
+      - zk-ecom
     command: node dist/apps/inventory-service/main
     restart: unless-stopped
 
@@ -543,14 +540,13 @@ services:
       DATABASE_PORT: ${DATABASE_PORT}
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_NAME: ${DATABASE_NAME}
       KAFKA_BROKERS: kafka:29092
     ports:
       - "4006:4006"
     volumes:
       - app-logs:${LOGS_DIR:-/app/logs}
     networks:
-      - ecommerce-network
+      - zk-ecom
     command: node dist/apps/shipping-service/main
     restart: unless-stopped
 
@@ -575,7 +571,6 @@ services:
       DATABASE_PORT: ${DATABASE_PORT}
       DATABASE_USER: ${DATABASE_USER}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_NAME: ${DATABASE_NAME}
       KAFKA_BROKERS: kafka:29092
       SMTP_HOST: localhost
       SMTP_PORT: 1025
@@ -584,12 +579,12 @@ services:
     volumes:
       - app-logs:${LOGS_DIR:-/app/logs}
     networks:
-      - ecommerce-network
+      - zk-ecom
     command: node dist/apps/notifications-service/main
     restart: unless-stopped
 
 networks:
-  ecommerce-network:
+  zk-ecom:
     driver: bridge
 
 volumes:
