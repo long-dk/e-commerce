@@ -1,12 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 import { Field, ObjectType, ID, Float } from '@nestjs/graphql';
-import { StockMovementType } from './inventory.entity';
+import { StockMovementType } from './inventory.enum';
 import { uuidv7Plugin } from '@app/database';
 
-export type StockMovementDocument = StockMovement & Document;
+export type StockMovementDocument = HydratedDocument<StockMovement>;
 
-@Schema({ timestamps: true })
+@Schema({
+  timestamps: true,
+  toJSON: { getters: true, virtuals: true  },
+  toObject: { getters: true, virtuals: true }
+})
 @ObjectType()
 export class StockMovement {
   @Field(() => ID)

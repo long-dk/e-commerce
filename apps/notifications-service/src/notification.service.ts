@@ -1,8 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { PubSub } from 'graphql-subscriptions';
-import { Notification, NotificationStatus, NotificationChannel } from './notification.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { NotificationStatus, NotificationChannel } from './notification.entity';
 import {
   CreateNotificationInput,
   UpdateNotificationInput,
@@ -12,32 +9,23 @@ import {
   NotificationType,
 } from './notification.types';
 import { LoggerService } from '@app/common';
+import { NotificationRepository } from './notification.repository';
+import { NotificationGateway } from './notification.gateway';
 
 @Injectable()
 export class NotificationService {
     constructor(
-    @InjectRepository(Notification)
-    private readonly notificationRepository: Repository<Notification>,
-    @Inject('PUB_SUB') private readonly pubSub: PubSub,
+    private readonly notificationRepository: NotificationRepository,
+    private readonly notificationGateway: NotificationGateway,
     private readonly logger: LoggerService,
   ) {}
 
   async create(input: CreateNotificationInput): Promise<NotificationType> {
-    const notificationData = {
-      userId: input.userId,
-      title: input.title,
-      message: input.message,
-      channel: input.channel ?? NotificationChannel.INAPP,
-      status: input.status ?? NotificationStatus.PENDING,
-      payload: input.payload ? JSON.parse(input.payload as string) : undefined,
-    };
+    const res = await this.notificationRepository.createNotification(input);
+    const notification = res as unknown as NotificationType;
 
-    const notification = this.notificationRepository.create(notificationData as any);
-    const saved = await this.notificationRepository.save(notification);
-    const result = saved as unknown as NotificationType;
-
-    await this.pubSub.publish('notificationCreated', { notificationCreated: result });
-    return result;
+    this.broadcastNotificationEvent('notificationCreated', notification);
+    return notification;
   }
 
   async findOne(id: string): Promise<NotificationType> {
@@ -81,7 +69,8 @@ export class NotificationService {
 
     const saved = await this.notificationRepository.save(notification);
     const result = saved as NotificationType;
-    await this.pubSub.publish('notificationUpdated', { notificationUpdated: result });
+
+    this.broadcastNotificationEvent('notificationUpdated', result);
 
     return result;
   }
@@ -96,7 +85,9 @@ export class NotificationService {
 
     const saved = await this.notificationRepository.save(notification);
     const result = saved as NotificationType;
-    await this.pubSub.publish('notificationRead', { notificationRead: result });
+
+    this.broadcastNotificationEvent('notificationRead', result);
+
     return result;
   }
 
@@ -149,5 +140,9 @@ export class NotificationService {
     } catch (error) {
       this.logger.error(`Failed to handle event ${eventType}: ${error}`);
     }
+  }
+
+  private broadcastNotificationEvent(event: string, payload: any) {
+    this.notificationGateway.server.emit(event, { payload });
   }
 }

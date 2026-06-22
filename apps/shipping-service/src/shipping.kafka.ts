@@ -38,7 +38,7 @@ export class ShippingKafkaService implements OnModuleInit, OnModuleDestroy {
         timestamp: new Date().toISOString(),
       });
 
-      this.shippingGateway.server.emit('shipping.shipped', shipment);
+      this.shippingGateway.broadcastShippingEvent('shipping.shipped', shipment);
     } catch (error) {
       this.logger.error(`Failed to process order.shipped event: ${error}`, error, ShippingKafkaService.name);
       this.kafkaClient.emit('shipping.shipped.failed', {
@@ -59,7 +59,7 @@ export class ShippingKafkaService implements OnModuleInit, OnModuleDestroy {
         timestamp: new Date().toISOString(),
       });
 
-      this.shippingGateway.server.emit('shipping.delivered', shipment);
+      this.shippingGateway.broadcastShippingEvent('shipping.delivered', shipment);
     } catch (error) {
       this.logger.error(`Failed to process order.delivered event: ${error}`, error, ShippingKafkaService.name);
       this.kafkaClient.emit('shipping.delivered.failed', {
@@ -82,7 +82,7 @@ export class ShippingKafkaService implements OnModuleInit, OnModuleDestroy {
         timestamp: new Date().toISOString(),
       });
 
-      this.shippingGateway.server.emit('shipping.cancelled', shipment);
+      this.shippingGateway.broadcastShippingEvent('shipping.cancelled', shipment);
     } catch (error) {
       this.logger.error(`Failed to process order.cancelled event: ${error}`, error, ShippingKafkaService.name);
       this.kafkaClient.emit('shipping.cancelled.failed', {

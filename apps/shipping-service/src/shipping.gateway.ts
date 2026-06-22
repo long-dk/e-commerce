@@ -8,8 +8,8 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ShippingService } from './shipping.service';
 import { JwtService } from '@nestjs/jwt';
+import { ShippingRepository } from './shipping.repository';
 
 interface AuthenticatedSocket extends Socket {
   user?: any;
@@ -27,7 +27,7 @@ export class ShippingGateway implements OnGatewayConnection, OnGatewayDisconnect
   server: Server;
 
   constructor(
-    private readonly shippingService: ShippingService,
+    private readonly shippingRepository: ShippingRepository,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -53,17 +53,21 @@ export class ShippingGateway implements OnGatewayConnection, OnGatewayDisconnect
     // noop
   }
 
+  broadcastShippingEvent(event: string, payload: any) {
+    this.server.emit(event, { payload });
+  }
+
   @SubscribeMessage('shipOrder')
   async handleShipOrder(
     @MessageBody() data: { orderId: string; carrier: string; trackingNumber: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     try {
-      const shipment = await this.shippingService.markAsShipped(data.orderId, data.carrier, data.trackingNumber);
-      this.server.emit('shipmentUpdated', shipment);
+      const shipment = await this.shippingRepository.markAsShipped(data.orderId, data.carrier, data.trackingNumber);
+      this.broadcastShippingEvent('shipmentUpdated', shipment);
       return { success: true, shipment };
     } catch (error) {
-      return { success: false, message: error.message };
+      return { success: false, message: `${error}` };
     }
   }
 
@@ -72,7 +76,7 @@ export class ShippingGateway implements OnGatewayConnection, OnGatewayDisconnect
     @MessageBody() data: { orderId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    const shipment = await this.shippingService.findByOrderId(data.orderId);
+    const shipment = await this.shippingRepository.findByOrderId(data.orderId);
     return { shipment };
   }
 }

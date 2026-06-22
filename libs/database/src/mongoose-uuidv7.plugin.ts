@@ -15,7 +15,4 @@ export function uuidv7Plugin(schema: Schema) {
   // Override _id field to use string type for UUIDv7
   schema.set('_id', false);
   schema.add({ _id: { type: String, required: true, default: () => uuidv7() } });
-  
-  // Add sparse index on _id for better query performance
-  schema.index({ _id: 1 }, { sparse: true });
 }

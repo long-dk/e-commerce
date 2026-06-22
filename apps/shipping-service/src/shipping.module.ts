@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Shipment } from './shipping.entity';
 import { ShippingResolver } from './shipping.resolver';
@@ -10,22 +10,23 @@ import { ShippingGateway } from './shipping.gateway';
 import { ShippingKafkaService } from './shipping.kafka';
 import { getShippingServicePostgresConfig } from '@app/database';
 import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
-import { retry } from 'rxjs';
 import { AuthModule } from '../../../libs/shared/src/auth';
 import { ShippingController } from './shipping.controller';
+import { ShippingRepository } from './shipping.repository'
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(getShippingServicePostgresConfig() as any),
     TypeOrmModule.forFeature([Shipment]),
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      autoSchemaFile: true,
-      subscriptions: {
-        'graphql-ws': true,
+    // GraphQL configuration
+    GraphQLModule.forRoot<ApolloFederationDriverConfig>({
+      driver: ApolloFederationDriver,
+      autoSchemaFile: {
+        federation: 2,
       },
       playground: true,
       introspection: true,
+      context: ({ req }) => ({ req }),
     }),
     ClientsModule.register([
       {
@@ -57,10 +58,7 @@ import { ShippingController } from './shipping.controller';
     ShippingGateway,
     ShippingKafkaService,
     LoggerService,
-    {
-      provide: 'PUB_SUB',
-      useValue: new (require('graphql-subscriptions').PubSub)(),
-    },
+    ShippingRepository,
   ],
   exports: [ShippingService, ShippingKafkaService],
 })

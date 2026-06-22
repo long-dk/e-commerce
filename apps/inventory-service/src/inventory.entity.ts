@@ -1,34 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
-import { Field, ObjectType, ID, Float, Int } from '@nestjs/graphql';
+import { HydratedDocument } from 'mongoose';
+import { Field, ObjectType, ID, Float } from '@nestjs/graphql';
 import { uuidv7Plugin } from '@app/database';
+import { InventoryStatus, StockMovementType } from './inventory.enum';
 
-export type InventoryDocument = Inventory & Document;
+export type InventoryDocument = HydratedDocument<Inventory>;
 
-export enum InventoryStatus {
-  IN_STOCK = 'IN_STOCK',
-  LOW_STOCK = 'LOW_STOCK',
-  OUT_OF_STOCK = 'OUT_OF_STOCK',
-  DISCONTINUED = 'DISCONTINUED',
-  BACKORDERED = 'BACKORDERED'
-}
-
-export enum StockMovementType {
-  STOCK_IN = 'STOCK_IN',
-  STOCK_OUT = 'STOCK_OUT',
-  SALE = 'SALE',
-  RETURN = 'RETURN',
-  ADJUSTMENT_IN = 'ADJUSTMENT_IN',
-  ADJUSTMENT_OUT = 'ADJUSTMENT_OUT',
-  DAMAGE = 'DAMAGE',
-  LOSS = 'LOSS',
-  RESERVATION = 'RESERVATION',
-  RESERVATION_RELEASE = 'RESERVATION_RELEASE',
-  INITIAL_STOCK = 'INITIAL_STOCK',
-  TRANSFER = 'TRANSFER',
-}
-
-@Schema({ timestamps: true })
+@Schema({ 
+  timestamps: true,
+  toJSON: { getters: true, virtuals: true  },
+  toObject: { getters: true, virtuals: true }
+})
 @ObjectType()
 export class Inventory {
   @Field(() => ID)
@@ -217,6 +199,5 @@ InventorySchema.index({ status: 1 });
 InventorySchema.index({ categories: 1 });
 InventorySchema.index({ location: 1 });
 InventorySchema.index({ quantity: 1 });
-InventorySchema.index({ availableQuantity: 1 });
 InventorySchema.index({ lastStockUpdate: -1 });
 InventorySchema.index({ isActive: 1, trackInventory: 1 });

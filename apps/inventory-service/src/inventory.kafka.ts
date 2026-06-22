@@ -2,7 +2,7 @@ import { Injectable, Inject, OnModuleInit, OnModuleDestroy } from '@nestjs/commo
 import { ClientKafka } from '@nestjs/microservices';
 import { InventoryService } from './inventory.service';
 import { InventoryGateway } from './inventory.gateway';
-import { StockMovementType } from './inventory.entity';
+import { StockMovementType } from './inventory.enum';
 import { LoggerService } from '@app/common';
 
 @Injectable()
@@ -58,7 +58,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             productId: item.productId,
             quantity: item.quantity,
             success: false,
-            error: error.message,
+            error: `${error}`,
           });
         }
       }
@@ -82,7 +82,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
       // Publish failure event
       this.kafkaClient.emit('inventory.reservation.failed', {
         orderId: orderData.orderId,
-        error: error.message,
+        error,
         timestamp: new Date().toISOString(),
       });
     }
@@ -117,7 +117,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             productId: item.productId,
             quantity: item.quantity,
             success: false,
-            error: error.message,
+            error: `${error}`,
           });
         }
       }
@@ -181,7 +181,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             productId: item.productId,
             quantity: item.quantity,
             success: false,
-            error: error.message,
+            error: `${error}`,
           });
         }
       }
@@ -320,7 +320,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             productId: item.productId,
             quantity: item.quantity,
             success: false,
-            error: error.message,
+            error: `${error}`,
           });
         }
       }
@@ -361,7 +361,7 @@ export class InventoryKafkaService implements OnModuleInit, OnModuleDestroy {
             productId: item.productId,
             quantity: item.quantity,
             success: false,
-            error: error.message,
+            error: `${error}`,
           });
         }
       }

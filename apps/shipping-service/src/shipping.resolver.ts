@@ -1,6 +1,5 @@
-import { Resolver, Query, Mutation, Args, ID, Subscription } from '@nestjs/graphql';
-import { UseGuards, Inject } from '@nestjs/common';
-import { PubSub } from 'graphql-subscriptions';
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
 import { ShippingService } from './shipping.service';
 import {
   ShipmentType,
@@ -14,10 +13,7 @@ import { JwtAuthGuard } from '../../../libs/shared/src/auth/jwt-auth.guard';
 
 @Resolver(() => ShipmentType)
 export class ShippingResolver {
-  constructor(
-    private readonly shippingService: ShippingService,
-    @Inject('PUB_SUB') private readonly pubSub: PubSub,
-  ) {}
+  constructor( private readonly shippingService: ShippingService ) {}
 
   @Query(() => ShipmentType)
   @UseGuards(JwtAuthGuard)
@@ -53,7 +49,6 @@ export class ShippingResolver {
   @UseGuards(JwtAuthGuard)
   async createShipment(@Args('input') input: CreateShipmentInput) {
     const shipment = await this.shippingService.create(input);
-    await this.pubSub.publish('shipmentCreated', { shipmentCreated: shipment });
     return shipment;
   }
 
@@ -61,22 +56,6 @@ export class ShippingResolver {
   @UseGuards(JwtAuthGuard)
   async updateShipment(@Args('input') input: UpdateShipmentInput) {
     const shipment = await this.shippingService.update(input.id, input);
-    await this.pubSub.publish('shipmentUpdated', { shipmentUpdated: shipment });
     return shipment;
-  }
-
-  @Subscription(() => ShipmentType)
-  shipmentCreated() {
-    return this.pubSub.asyncIterator('shipmentCreated');
-  }
-
-  @Subscription(() => ShipmentType)
-  shipmentUpdated() {
-    return this.pubSub.asyncIterator('shipmentUpdated');
-  }
-
-  @Subscription(() => ShipmentType)
-  shipmentStatusChanged() {
-    return this.pubSub.asyncIterator('shipmentStatusChanged');
   }
 }

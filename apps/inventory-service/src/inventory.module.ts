@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Inventory, InventorySchema } from './inventory.entity';
 import { StockMovement, StockMovementSchema } from './stock-movement.entity';
@@ -13,6 +13,7 @@ import { getInventoryServiceMongoConfig } from '@app/database';
 import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { InventoryController } from './inventory.controller';
 import { AuthModule } from '../../../libs/shared/src/auth';
+import { InventoryRepository } from './inventory.repository';
 
 @Module({
   imports: [
@@ -24,17 +25,15 @@ import { AuthModule } from '../../../libs/shared/src/auth';
     ]),
     AuthModule,
     // GraphQL configuration
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      autoSchemaFile: true,
-      subscriptions: {
-        'graphql-ws': true,
-        'subscriptions-transport-ws': true,
+    GraphQLModule.forRoot<ApolloFederationDriverConfig>({
+      driver: ApolloFederationDriver,
+      autoSchemaFile: {
+        federation: 2,
       },
       playground: true,
       introspection: true,
+      context: ({ req }) => ({ req }),
     }),
-
     // Kafka client for event-driven communication
     ClientsModule.register([
       {
@@ -64,11 +63,7 @@ import { AuthModule } from '../../../libs/shared/src/auth';
     InventoryService,
     InventoryGateway,
     InventoryKafkaService,
-    // PubSub for GraphQL subscriptions
-    {
-      provide: 'PUB_SUB',
-      useValue: new (require('graphql-subscriptions').PubSub)(),
-    },
+    InventoryRepository,
     LoggerService,
   ],
   exports: [InventoryService, InventoryKafkaService],

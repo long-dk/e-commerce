@@ -1,17 +1,6 @@
-import { Field, ObjectType, InputType, ID, Float, Int, registerEnumType } from '@nestjs/graphql';
-import { Inventory, InventoryStatus, StockMovementType as StockMovementTypeEnum } from './inventory.entity';
-import { StockMovement } from './stock-movement.entity';
+import { Field, ObjectType, InputType, ID, Float, Int } from '@nestjs/graphql';
+import { InventoryStatus, StockMovementType } from './inventory.enum';
 import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
-
-registerEnumType(InventoryStatus, {
-  name: 'InventoryStatus',
-  description: 'Inventory status enumeration',
-});
-
-registerEnumType(StockMovementTypeEnum, {
-  name: 'StockMovementTypeEnum',
-  description: 'Stock movement type enumeration',
-});
 
 
 @ObjectType()
@@ -128,8 +117,8 @@ export class StockMovementRecord {
   @Field()
   inventoryId: string;
 
-  @Field(() => StockMovementTypeEnum)
-  movementType: StockMovementTypeEnum;
+  @Field(() => StockMovementType)
+  movementType: StockMovementType;
 
   @Field(() => Float)
   quantity: number;
@@ -367,9 +356,9 @@ export class StockAdjustmentInput {
   @Min(1)
   quantity: number;
 
-  @Field(() => StockMovementTypeEnum)
+  @Field(() => StockMovementType)
   @IsNotEmpty()
-  movementType: StockMovementTypeEnum;
+  movementType: StockMovementType;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -507,9 +496,9 @@ export class StockMovementFilters {
   @IsOptional()
   inventoryId?: string;
 
-  @Field(() => [StockMovementTypeEnum], { nullable: true })
+  @Field(() => [StockMovementType], { nullable: true })
   @IsOptional()
-  movementType?: StockMovementTypeEnum[];
+  movementType?: StockMovementType[];
 
   @Field({ nullable: true })
   @IsOptional()

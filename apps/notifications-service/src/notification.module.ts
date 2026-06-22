@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NotificationService } from './notification.service';
@@ -11,20 +11,21 @@ import { Notification } from './notification.entity';
 import { getNotificationsServicePostgresConfig } from '@app/database';
 import { LoggerService, MetricsController, MonitoringModule } from '@app/common';
 import { AuthModule } from '../../../libs/shared/src/auth';
+import { NotificationRepository } from './notification.repository';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(getNotificationsServicePostgresConfig() as any),
     TypeOrmModule.forFeature([Notification]),
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      autoSchemaFile: true,
-      subscriptions: {
-        'graphql-ws': true,
-        'subscriptions-transport-ws': true,
+    // GraphQL configuration
+    GraphQLModule.forRoot<ApolloFederationDriverConfig>({
+      driver: ApolloFederationDriver,
+      autoSchemaFile: {
+        federation: 2,
       },
       playground: true,
       introspection: true,
+      context: ({ req }) => ({ req }),
     }),
     ClientsModule.register([
       {
@@ -54,11 +55,7 @@ import { AuthModule } from '../../../libs/shared/src/auth';
     NotificationService, 
     NotificationResolver,
     NotificationGateway,
-    // PubSub for GraphQL subscriptions
-    {
-      provide: 'PUB_SUB',
-      useValue: new (require('graphql-subscriptions').PubSub)(),
-    },
+    NotificationRepository,
     LoggerService,
   ],
 })

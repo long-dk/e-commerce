@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, Subscription } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { JwtAuthGuard } from '../../../libs/shared/src/auth/jwt-auth.guard';
@@ -53,26 +53,5 @@ export class NotificationResolver {
   @UseGuards(JwtAuthGuard)
   markNotificationRead(@Args('id') id: string) {
     return this.service.markAsRead(id);
-  }
-
-  @Subscription(() => NotificationType, {
-    resolve: (payload) => payload.notificationCreated,
-  })
-  notificationCreated() {
-    return this.service['pubSub'].asyncIterator('notificationCreated');
-  }
-
-  @Subscription(() => NotificationType, {
-    resolve: (payload) => payload.notificationUpdated,
-  })
-  notificationUpdated() {
-    return this.service['pubSub'].asyncIterator('notificationUpdated');
-  }
-
-  @Subscription(() => NotificationType, {
-    resolve: (payload) => payload.notificationRead,
-  })
-  notificationRead() {
-    return this.service['pubSub'].asyncIterator('notificationRead');
   }
 }

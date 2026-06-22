@@ -8,10 +8,8 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Inject, UseGuards } from '@nestjs/common';
-import { PubSub } from 'graphql-subscriptions';
-import { InventoryService } from './inventory.service';
 import { JwtService } from '@nestjs/jwt';
+import { InventoryRepository } from './inventory.repository';
 
 interface AuthenticatedSocket extends Socket {
   user?: any;
@@ -32,13 +30,9 @@ export class InventoryGateway implements OnGatewayConnection, OnGatewayDisconnec
   private connectedClients = new Map<string, AuthenticatedSocket>();
 
   constructor(
-    private readonly inventoryService: InventoryService,
+    private readonly inventoryRepository: InventoryRepository,
     private readonly jwtService: JwtService,
-    @Inject('PUB_SUB') private readonly pubSub: PubSub,
-  ) {
-    // Subscribe to GraphQL pubsub events and broadcast to WebSocket clients
-    this.setupPubSubSubscriptions();
-  }
+  ) {}
 
   async handleConnection(client: AuthenticatedSocket, ...args: any[]) {
     try {
@@ -161,7 +155,7 @@ export class InventoryGateway implements OnGatewayConnection, OnGatewayDisconnec
   ) {
     try {
       const { productId } = data;
-      const inventory = await this.inventoryService.findByProductId(productId);
+      const inventory = await this.inventoryRepository.findByProductId(productId);
 
       if (inventory) {
         client.emit('inventoryStatus', {
@@ -180,7 +174,7 @@ export class InventoryGateway implements OnGatewayConnection, OnGatewayDisconnec
     } catch (error) {
       client.emit('error', {
         message: 'Failed to get inventory status',
-        error: error.message,
+        error,
         timestamp: new Date().toISOString(),
       });
     }
@@ -193,7 +187,7 @@ export class InventoryGateway implements OnGatewayConnection, OnGatewayDisconnec
   ) {
     try {
       const { productId, quantity } = data;
-      const result = await this.inventoryService.checkStock(productId, quantity);
+      const result = await this.inventoryRepository.checkStock(productId, quantity);
 
       client.emit('stockCheckResult', {
         ...result,
@@ -202,46 +196,13 @@ export class InventoryGateway implements OnGatewayConnection, OnGatewayDisconnec
     } catch (error) {
       client.emit('error', {
         message: 'Failed to check stock',
-        error: error.message,
+        error,
         timestamp: new Date().toISOString(),
       });
     }
   }
 
-  private setupPubSubSubscriptions() {
-    // Subscribe to GraphQL pubsub events and broadcast to WebSocket clients
-    this.pubSub.subscribe('inventoryCreated', (payload) => {
-      const inventory = payload.inventoryCreated;
-      this.broadcastInventoryUpdate('inventoryCreated', inventory);
-    });
-
-    this.pubSub.subscribe('inventoryUpdated', (payload) => {
-      const inventory = payload.inventoryUpdated;
-      this.broadcastInventoryUpdate('inventoryUpdated', inventory);
-    });
-
-    this.pubSub.subscribe('inventoryDeleted', (payload) => {
-      const inventoryId = payload.inventoryDeleted;
-      this.broadcastInventoryDeletion('inventoryDeleted', inventoryId);
-    });
-
-    this.pubSub.subscribe('lowStockAlert', (payload) => {
-      const inventory = payload.lowStockAlert;
-      this.broadcastAlert('lowStockAlert', inventory);
-    });
-
-    this.pubSub.subscribe('outOfStockAlert', (payload) => {
-      const inventory = payload.outOfStockAlert;
-      this.broadcastAlert('outOfStockAlert', inventory);
-    });
-
-    this.pubSub.subscribe('reorderAlert', (payload) => {
-      const inventory = payload.reorderAlert;
-      this.broadcastAlert('reorderAlert', inventory);
-    });
-  }
-
-  private broadcastInventoryUpdate(event: string, inventory: any) {
+  broadcastInventoryUpdate(event: string, inventory: any) {
     // Broadcast to all clients subscribed to this product
     this.server.to(`inventory:${inventory.productId}`).emit(event, {
       inventory,
@@ -255,7 +216,7 @@ export class InventoryGateway implements OnGatewayConnection, OnGatewayDisconnec
     });
   }
 
-  private broadcastInventoryDeletion(event: string, inventoryId: string) {
+  broadcastInventoryDeletion(event: string, inventoryId: string) {
     // Broadcast to all clients (since we don't know the product ID for deleted items)
     this.server.emit(event, {
       inventoryId,
@@ -263,7 +224,7 @@ export class InventoryGateway implements OnGatewayConnection, OnGatewayDisconnec
     });
   }
 
-  private broadcastAlert(event: string, inventory: any) {
+  broadcastAlert(event: string, inventory: any) {
     // Broadcast alerts to clients subscribed to alerts
     this.server.to('inventory:alerts').emit(event, {
       inventory,
