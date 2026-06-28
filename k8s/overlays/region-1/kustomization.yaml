@@ -1,0 +1,70 @@
+---
+# Region 1 Overlay - Kustomization file
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: ecommerce-region1
+
+bases:
+- ../../base/namespaces
+- ../../base/rbac
+- ../../base/services
+- ../../base/databases
+- ../../base/ingress
+
+namespace: production
+
+configMapGenerator:
+- name: ecommerce-config
+  behavior: merge
+  literals:
+  - REGION=region-1
+  - REPLICA_ID=0
+
+patchesStrategicMerge:
+- api-gateway-patch.yaml
+- database-replica-config.yaml
+
+replicas:
+- name: api-gateway
+  count: 3
+- name: auth-service
+  count: 2
+- name: products-service
+  count: 3
+- name: orders-service
+  count: 2
+- name: payments-service
+  count: 2
+- name: inventory-service
+  count: 2
+- name: shipping-service
+  count: 2
+- name: notifications-service
+  count: 2
+
+images:
+- name: ecommerce-api-gateway
+  newTag: "1.0.0-prod"
+- name: ecommerce-auth-service
+  newTag: "1.0.0-prod"
+- name: ecommerce-products-service
+  newTag: "1.0.0-prod"
+- name: ecommerce-orders-service
+  newTag: "1.0.0-prod"
+- name: ecommerce-payments-service
+  newTag: "1.0.0-prod"
+- name: ecommerce-inventory-service
+  newTag: "1.0.0-prod"
+- name: ecommerce-shipping-service
+  newTag: "1.0.0-prod"
+- name: ecommerce-notifications-service
+  newTag: "1.0.0-prod"
+
+commonLabels:
+  region: region-1
+  managed-by: argocd
+
+commonAnnotations:
+  region: region-1
+  deployment-timestamp: "2026-06-23"

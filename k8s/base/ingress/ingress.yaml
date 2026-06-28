@@ -1,0 +1,157 @@
+---
+# Nginx Ingress Controller Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress-controller
+  namespace: ingress-nginx
+  labels:
+    app: nginx-ingress
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-ingress
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 443
+    protocol: TCP
+
+---
+# Ingress for API Gateway
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-gateway-ingress
+  namespace: production
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.ecommerce.local
+    secretName: api-tls-cert
+  rules:
+  - host: api.ecommerce.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 4000
+
+---
+# Ingress for GraphQL endpoint
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: graphql-ingress
+  namespace: production
+  annotations:
+    nginx.ingress.kubernetes.io/websocket-services: "api-gateway"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - graphql.ecommerce.local
+    secretName: graphql-tls-cert
+  rules:
+  - host: graphql.ecommerce.local
+    http:
+      paths:
+      - path: /graphql
+        pathType: Exact
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 4000
+
+---
+# Ingress for Monitoring dashboards
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: 'Monitoring'
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - grafana.ecommerce.local
+    - kibana.ecommerce.local
+    - prometheus.ecommerce.local
+    secretName: monitoring-tls-cert
+  rules:
+  - host: grafana.ecommerce.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+  - host: kibana.ecommerce.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kibana
+            port:
+              number: 5601
+  - host: prometheus.ecommerce.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+
+---
+# Ingress for Jaeger
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jaeger-ingress
+  namespace: monitoring
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - jaeger.ecommerce.local
+    secretName: jaeger-tls-cert
+  rules:
+  - host: jaeger.ecommerce.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jaeger
+            port:
+              number: 16686

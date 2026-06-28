@@ -1,0 +1,123 @@
+---
+# StorageClass for local volumes (requires local storage provisioner)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# PostgreSQL ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: production
+data:
+  POSTGRES_DB: "ecommerce"
+  POSTGRES_USER: "ecommerce_user"
+  postgres_init.sql: |
+    CREATE DATABASE auth_db;
+    CREATE DATABASE orders_db;
+    CREATE DATABASE payments_db;
+    CREATE DATABASE shipping_db;
+    CREATE DATABASE notifications_db;
+    GRANT ALL PRIVILEGES ON DATABASE auth_db TO ecommerce_user;
+    GRANT ALL PRIVILEGES ON DATABASE orders_db TO ecommerce_user;
+    GRANT ALL PRIVILEGES ON DATABASE payments_db TO ecommerce_user;
+    GRANT ALL PRIVILEGES ON DATABASE shipping_db TO ecommerce_user;
+    GRANT ALL PRIVILEGES ON DATABASE notifications_db TO ecommerce_user;
+
+---
+# PostgreSQL Service (Headless for StatefulSet)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: production
+  labels:
+    app: postgres
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+  - name: postgresql
+    port: 5432
+    targetPort: 5432
+
+---
+# PostgreSQL StatefulSet (3 replicas: 1 primary + 2 read replicas)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: production
+spec:
+  serviceName: postgres
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - name: postgresql
+          containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: DATABASE_PASSWORD
+        - name: POSTGRES_INITDB_ARGS
+          value: "-c wal_level=replica -c max_wal_senders=10 -c max_replication_slots=10"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+        - name: postgres-config
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U ecommerce_user
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U ecommerce_user
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-config
+        configMap:
+          name: postgres-config
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: local-storage
+      resources:
+        requests:
+          storage: 10Gi

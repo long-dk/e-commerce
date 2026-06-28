@@ -1,0 +1,58 @@
+---
+# ConfigMap: Shared environment variables for all services
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecommerce-config
+  namespace: production
+data:
+  LOG_LEVEL: "info"
+  NODE_ENV: "production"
+  
+  # Database hosts (will be updated per region)
+  DATABASE_HOST: "postgres.production.svc.cluster.local"
+  DATABASE_PORT: "5432"
+  MONGODB_HOST: "mongodb.production.svc.cluster.local"
+  MONGODB_PORT: "27017"
+  REDIS_HOST: "redis.production.svc.cluster.local"
+  REDIS_PORT: "6379"
+  
+  # Message broker
+  KAFKA_BROKERS: "kafka-0.kafka-headless:9092,kafka-1.kafka-headless:9092,kafka-2.kafka-headless:9092"
+  KAFKA_TOPICS: "orders,payments,inventory,products,notifications"
+  
+  # Service discovery
+  AUTH_SERVICE_HOST: "auth-service.production.svc.cluster.local"
+  AUTH_SERVICE_PORT: "4001"
+  PRODUCTS_SERVICE_HOST: "products-service.production.svc.cluster.local"
+  PRODUCTS_SERVICE_PORT: "4002"
+  ORDERS_SERVICE_HOST: "orders-service.production.svc.cluster.local"
+  ORDERS_SERVICE_PORT: "4003"
+  PAYMENTS_SERVICE_HOST: "payments-service.production.svc.cluster.local"
+  PAYMENTS_SERVICE_PORT: "4004"
+  INVENTORY_SERVICE_HOST: "inventory-service.production.svc.cluster.local"
+  INVENTORY_SERVICE_PORT: "4005"
+  SHIPPING_SERVICE_HOST: "shipping-service.production.svc.cluster.local"
+  SHIPPING_SERVICE_PORT: "4006"
+  NOTIFICATIONS_SERVICE_HOST: "notifications-service.production.svc.cluster.local"
+  NOTIFICATIONS_SERVICE_PORT: "4007"
+  
+  # Monitoring
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger.monitoring.svc.cluster.local:4317"
+  PROMETHEUS_METRICS_ENABLED: "true"
+
+---
+# ConfigMap: Service-specific database names
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-config
+  namespace: production
+data:
+  AUTH_SERVICE_DATABASE_NAME: "auth_db"
+  ORDERS_SERVICE_DATABASE_NAME: "orders_db"
+  PAYMENTS_SERVICE_DATABASE_NAME: "payments_db"
+  SHIPPING_SERVICE_DATABASE_NAME: "shipping_db"
+  NOTIFICATIONS_SERVICE_DATABASE_NAME: "notifications_db"
+  PRODUCTS_MONGODB_DB: "products_db"
+  INVENTORY_MONGODB_DB: "inventory_db"

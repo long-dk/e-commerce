@@ -1,0 +1,149 @@
+---
+# ArgoCD Namespace and setup script
+# This file documents the setup; actual installation uses helm or argocd-install.sh
+
+# ArgoCD Application for Region 1 Base Infrastructure
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-base-region1
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_ORG/ecommerce-k8s-manifests.git
+    targetRevision: main
+    path: k8s/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+---
+# ArgoCD Application for Region 1 Overlays (region-specific configs)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-region1-overlay
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_ORG/ecommerce-k8s-manifests.git
+    targetRevision: main
+    path: k8s/overlays/region-1
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+---
+# ArgoCD Application for Region 1 Monitoring Stack
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-monitoring-region1
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_ORG/ecommerce-k8s-manifests.git
+    targetRevision: main
+    path: k8s/base/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+---
+# ArgoCD ApplicationSet for multi-region deployment
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ecommerce-multi-region
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: region-1
+        server: https://kubernetes-region1-api:443
+        domain: ecommerce-r1.local
+      - cluster: region-2
+        server: https://kubernetes-region2-api:443
+        domain: ecommerce-r2.local
+  template:
+    metadata:
+      name: 'ecommerce-{{cluster}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/YOUR_ORG/ecommerce-k8s-manifests.git
+        targetRevision: main
+        path: 'k8s/overlays/{{cluster}}'
+        helm:
+          parameters:
+          - name: clusterName
+            value: '{{cluster}}'
+          - name: domain
+            value: '{{domain}}'
+      destination:
+        server: '{{server}}'
+        namespace: production
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+---
+# ArgoCD Project for ecommerce deployments
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ecommerce
+  namespace: argocd
+spec:
+  sourceRepos:
+  - 'https://github.com/YOUR_ORG/*'
+  destinations:
+  - server: 'https://*'
+    namespace: 'production'
+  - server: 'https://*'
+    namespace: 'monitoring'
+  - server: 'https://*'
+    namespace: 'argocd'
+  - server: 'https://*'
+    namespace: 'ingress-nginx'
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  namespaceResourceBlacklist:
+  - group: ''
+    kind: ResourceQuota
+  - group: ''
+    kind: LimitRange
